@@ -40,6 +40,7 @@ function renderUsers() {
   const filtered = getFilteredUsers();
 
   const tbody = document.getElementById('users-tbody');
+  const mobileList = document.getElementById('users-mobile-list');
   const table = document.getElementById('users-table');
   const emptyContainer = document.getElementById('users-empty-container');
 
@@ -47,6 +48,7 @@ function renderUsers() {
 
   if (filtered.length === 0) {
     tbody.innerHTML = '';
+    if (mobileList) mobileList.innerHTML = '';
     table.style.display = 'none';
 
     emptyContainer.innerHTML = renderEmptyState(
@@ -60,8 +62,16 @@ function renderUsers() {
   table.style.display = 'table';
   emptyContainer.innerHTML = '';
 
+  renderDesktopUserTable(filtered);
+  renderMobileUserCards(filtered);
+}
+
+function renderDesktopUserTable(users) {
+  const tbody = document.getElementById('users-tbody');
+  if (!tbody) return;
+
   let html = '';
-  filtered.forEach(user => {
+  users.forEach(user => {
     let badgeClass = 'badge-pending';
     if (user.status === 'approved') badgeClass = 'badge-approved';
     if (user.status === 'rejected') badgeClass = 'badge-rejected';
@@ -84,7 +94,7 @@ function renderUsers() {
         <td><span class="badge ${badgeClass}">${escapeHtml(user.status)}</span></td>
         <td style="font-size: 0.85rem; color: var(--text-soft);">${formatDate(user.createdAt)}</td>
         <td style="text-align: right;">
-          <div style="display: flex; gap: 0.35rem; justify-content: flex-end;">
+          <div style="display: flex; gap: 0.35rem; justify-content: flex-end; flex-wrap: wrap;">
             <button type="button" class="btn btn-outline btn-sm view-user-btn" data-id="${user.id}" title="View Details">
               ${getSvgIcon('eye')} View
             </button>
@@ -101,17 +111,66 @@ function renderUsers() {
   });
 
   tbody.innerHTML = html;
+  bindUserActionListeners(tbody);
+}
 
-  // Bind Event Listeners
-  tbody.querySelectorAll('.view-user-btn').forEach(btn => {
+function renderMobileUserCards(users) {
+  const mobileList = document.getElementById('users-mobile-list');
+  if (!mobileList) return;
+
+  let html = '';
+  users.forEach(user => {
+    let badgeClass = 'badge-pending';
+    if (user.status === 'approved') badgeClass = 'badge-approved';
+    if (user.status === 'rejected') badgeClass = 'badge-rejected';
+    if (user.status === 'blocked') badgeClass = 'badge-blocked';
+
+    const isBlocked = user.status === 'blocked';
+
+    html += `
+      <div class="user-mobile-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <div style="font-weight: 700; font-size: 1.05rem; color: var(--text);">${escapeHtml(user.name)}</div>
+            <div style="font-size: 0.85rem; color: var(--text-soft);">${escapeHtml(user.city)} • ${escapeHtml(user.relation)}</div>
+          </div>
+          <span class="badge ${badgeClass}">${escapeHtml(user.status)}</span>
+        </div>
+
+        <div style="font-size: 0.85rem; padding: 0.4rem 0; border-top: 1px dashed var(--border); border-bottom: 1px dashed var(--border);">
+          <div><strong>Masked Contact:</strong> <code>${escapeHtml(maskPhoneNumber(user.phone))}</code></div>
+          <div><strong>Registered:</strong> ${formatDate(user.createdAt)}</div>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap;">
+          <button type="button" class="btn btn-outline btn-sm view-user-btn" data-id="${user.id}">
+            ${getSvgIcon('eye')} View
+          </button>
+          <button type="button" class="btn ${isBlocked ? 'btn-success' : 'btn-outline'} btn-sm toggle-block-btn" data-id="${user.id}">
+            ${isBlocked ? 'Unblock' : 'Block'}
+          </button>
+          <button type="button" class="btn btn-danger btn-sm remove-user-btn" data-id="${user.id}">
+            ${getSvgIcon('trash')} Remove
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  mobileList.innerHTML = html;
+  bindUserActionListeners(mobileList);
+}
+
+function bindUserActionListeners(container) {
+  container.querySelectorAll('.view-user-btn').forEach(btn => {
     btn.addEventListener('click', () => openUserDetails(btn.getAttribute('data-id')));
   });
 
-  tbody.querySelectorAll('.toggle-block-btn').forEach(btn => {
+  container.querySelectorAll('.toggle-block-btn').forEach(btn => {
     btn.addEventListener('click', () => handleToggleBlock(btn.getAttribute('data-id')));
   });
 
-  tbody.querySelectorAll('.remove-user-btn').forEach(btn => {
+  container.querySelectorAll('.remove-user-btn').forEach(btn => {
     btn.addEventListener('click', () => handleRemoveUser(btn.getAttribute('data-id')));
   });
 }

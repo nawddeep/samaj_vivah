@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PROFILES.JS - Profile Management Controller, Filters & Actions
+   PROFILES.JS - Profile Management Controller, Filters, Pagination & Actions
    ========================================================================== */
 
 let currentPage = 1;
@@ -153,7 +153,7 @@ function renderDesktopTable(profiles) {
         <td><span class="badge ${badgeClass}">${escapeHtml(p.status)}</span></td>
         <td style="font-size: 0.85rem; color: var(--text-soft);">${formatDate(p.updatedAt || p.createdAt)}</td>
         <td style="text-align: right;">
-          <div style="display: flex; gap: 0.35rem; justify-content: flex-end;">
+          <div style="display: flex; gap: 0.35rem; justify-content: flex-end; flex-wrap: wrap;">
             <button type="button" class="btn btn-outline btn-sm view-profile-btn" data-id="${p.id}" title="View Full Details">${getSvgIcon('eye')} View</button>
             <a href="add-profile.html?id=${p.id}" class="btn btn-outline btn-sm" title="Edit Profile">${getSvgIcon('edit')} Edit</a>
             <button type="button" class="btn btn-outline btn-sm toggle-hide-btn" data-id="${p.id}" title="${p.status === 'hidden' ? 'Unhide' : 'Hide'}">
@@ -261,7 +261,7 @@ function renderPaginationControls(totalItems, totalPages, start, end) {
   });
 }
 
-// VIEW FULL PROFILE DETAIL MODAL (SHOWS UNMASKED FULL PHONE NUMBER)
+// VIEW FULL PROFILE DETAIL MODAL (SHOWS UNMASKED FULL PHONE NUMBER & LIGHTBOX GALLERY)
 function openViewModal(profileId) {
   const profile = typeof getProfileById === 'function' ? getProfileById(profileId) : null;
   if (!profile) return;
@@ -271,7 +271,7 @@ function openViewModal(profileId) {
     photosHtml = `
       <div style="display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.5rem; margin-bottom: 1rem;">
         ${profile.photos.map((src, i) => `
-          <img src="${src}" alt="Photo ${i+1}" style="height: 120px; border-radius: var(--radius-md); object-fit: cover; border: 1px solid var(--border);">
+          <img src="${src}" alt="Photo ${i+1}" class="gallery-photo-thumb" data-idx="${i}" style="height: 120px; border-radius: var(--radius-md); object-fit: cover; border: 1px solid var(--border); cursor: pointer;" title="Click to open full view">
         `).join('')}
       </div>
     `;
@@ -281,7 +281,7 @@ function openViewModal(profileId) {
     <div style="display: flex; flex-direction: column; gap: 1.25rem;">
       ${photosHtml}
 
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
         <div>
           <h3 style="color: var(--maroon); font-size: 1.4rem;">${escapeHtml(profile.name)}</h3>
           <span style="color: var(--text-soft); font-size: 0.9rem;">
@@ -292,7 +292,7 @@ function openViewModal(profileId) {
       </div>
 
       <!-- Full Contact Box (Unmasked) -->
-      <div style="background: var(--gold-light); border: 1px solid var(--gold); padding: 1rem; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center;">
+      <div style="background: var(--gold-light); border: 1px solid var(--gold); padding: 1rem; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
         <div>
           <span style="font-size: 0.8rem; color: #5C4100; font-weight: 600; text-transform: uppercase;">Verified Contact Number (Full)</span>
           <div style="font-size: 1.3rem; font-weight: bold; color: var(--maroon); letter-spacing: 0.05em; margin-top: 0.1rem; display: flex; align-items: center; gap: 0.4rem;">
@@ -352,12 +352,22 @@ function openViewModal(profileId) {
     <button type="button" class="btn btn-outline modal-close-btn">Close</button>
   `;
 
-  showModal({
+  const { backdrop } = showModal({
     title: `Profile Details - ${profile.name}`,
     bodyHtml,
     footerHtml,
     maxWidth: '650px'
   });
+
+  // Attach Lightbox click handlers to photo gallery thumbnails
+  if (profile.photos && profile.photos.length > 0) {
+    backdrop.querySelectorAll('.gallery-photo-thumb').forEach(img => {
+      img.addEventListener('click', () => {
+        const idx = parseInt(img.getAttribute('data-idx'), 10);
+        if (typeof openLightbox === 'function') openLightbox(profile.photos, idx);
+      });
+    });
+  }
 }
 
 // HIDE / UNHIDE PROFILE HANDLER WITH OPTIONAL REASON

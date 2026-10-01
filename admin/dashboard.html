@@ -41,7 +41,7 @@
           <li class="nav-item">
             <a href="approvals.html" class="nav-link">
               <span class="nav-link-icon">
-                <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 12 16 14"/></svg>
+                <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 16 14"/></svg>
               </span>
               <span>User Approvals</span>
               <span class="nav-badge pending-approvals-badge" style="display: none;">0</span>
@@ -115,12 +115,12 @@
             <h2 style="font-size: 1.4rem;">Welcome back, Admin</h2>
             <p style="color: var(--text-soft); font-size: 0.9rem;">Here is what's happening across your community platform today.</p>
           </div>
-          <div style="display: flex; gap: 0.75rem;">
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
             <a href="add-profile.html" class="btn btn-primary">
               <svg class="svg-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Profile
             </a>
             <a href="approvals.html" class="btn btn-secondary">
-              <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 12 16 14"/></svg> Review Pending Users
+              <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 16 14"/></svg> Review Pending Users
             </a>
           </div>
         </div>
@@ -149,7 +149,7 @@
 
           <div class="card stat-card">
             <div class="stat-icon pending">
-              <svg class="svg-icon" viewBox="0 0 24 24" style="width: 28px; height: 28px;"><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 12 16 14"/></svg>
+              <svg class="svg-icon" viewBox="0 0 24 24" style="width: 28px; height: 28px;"><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 16 14"/></svg>
             </div>
             <div class="stat-details">
               <span class="stat-value" id="stat-pending-approvals">0</span>
@@ -164,6 +164,35 @@
             <div class="stat-details">
               <span class="stat-value" id="stat-new-this-week">0</span>
               <span class="stat-label">New This Week</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visual Canvas Analytics Charts Grid -->
+        <div class="grid grid-cols-2" style="margin-bottom: 2rem;">
+          <!-- Profile Status Breakdown (Donut Chart) -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                Profile Status Distribution
+              </h3>
+            </div>
+            <div class="chart-container-box">
+              <canvas id="profile-donut-canvas"></canvas>
+            </div>
+          </div>
+
+          <!-- User Registration Status (Bar Chart) -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                User Account Status Breakdown
+              </h3>
+            </div>
+            <div class="chart-container-box">
+              <canvas id="user-bar-canvas"></canvas>
             </div>
           </div>
         </div>

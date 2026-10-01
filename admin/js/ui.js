@@ -1,8 +1,8 @@
 /* ==========================================================================
-   UI.JS - Toast Messages, Confirm Modal, Custom Modals, SVG Icons & Utilities
+   UI.JS - Toast Messages, Confirm Modal, Custom Modals, Canvas Charts, Lightbox & Utilities
    ========================================================================== */
 
-// SVG Icon Dictionary for UI/UX Pro Max clean interface (No emojis)
+// SVG Icon Dictionary for UI/UX Pro Max clean interface
 const SVG_ICONS = {
   dashboard: `<svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>`,
   approvals: `<svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 12 16 14"/></svg>`,
@@ -194,7 +194,55 @@ function showModal({ title, bodyHtml, footerHtml = '', maxWidth = '550px', onClo
   return { closeModal, backdrop };
 }
 
-// EMPTY STATE GENERATOR (SVG Icon)
+// LIGHTBOX CAROUSEL MODAL
+function openLightbox(images = [], initialIndex = 0) {
+  if (!images || images.length === 0) return;
+  let currentIndex = initialIndex;
+
+  const modal = document.createElement('div');
+  modal.className = 'lightbox-modal';
+
+  const renderLightbox = () => {
+    modal.innerHTML = `
+      <div style="position: absolute; top: 1rem; right: 1.5rem;">
+        <button type="button" class="lightbox-btn close-lb-btn">&times;</button>
+      </div>
+      <img src="${images[currentIndex]}" class="lightbox-img" alt="Photo ${currentIndex + 1}">
+      <div class="lightbox-controls">
+        <button type="button" class="lightbox-btn prev-lb-btn">&larr;</button>
+        <span style="color: white; font-weight: 600; font-size: 0.9rem;">${currentIndex + 1} / ${images.length}</span>
+        <button type="button" class="lightbox-btn next-lb-btn">&rarr;</button>
+      </div>
+    `;
+
+    modal.querySelector('.close-lb-btn').addEventListener('click', closeLb);
+    modal.querySelector('.prev-lb-btn').addEventListener('click', () => {
+      currentIndex = (currentIndex - 1 + images.length) % images.length;
+      renderLightbox();
+    });
+    modal.querySelector('.next-lb-btn').addEventListener('click', () => {
+      currentIndex = (currentIndex + 1) % images.length;
+      renderLightbox();
+    });
+  };
+
+  const closeLb = () => {
+    modal.remove();
+    document.removeEventListener('keydown', handleKb);
+  };
+
+  const handleKb = (e) => {
+    if (e.key === 'Escape') closeLb();
+    if (e.key === 'ArrowLeft') { currentIndex = (currentIndex - 1 + images.length) % images.length; renderLightbox(); }
+    if (e.key === 'ArrowRight') { currentIndex = (currentIndex + 1) % images.length; renderLightbox(); }
+  };
+
+  document.addEventListener('keydown', handleKb);
+  document.body.appendChild(modal);
+  renderLightbox();
+}
+
+// EMPTY STATE GENERATOR
 function renderEmptyState(title, desc, iconName = 'search') {
   const iconSvg = getSvgIcon(iconName) || getSvgIcon('search');
   return `
@@ -239,6 +287,136 @@ function compressImage(file, maxWidth = 800, quality = 0.75) {
     };
     reader.onerror = () => reject(new Error('Failed to read file.'));
     reader.readAsDataURL(file);
+  });
+}
+
+// STANDALONE OFFLINE CANVAS BAR CHART GENERATOR
+function drawCanvasBarChart(canvasId, labels, data, colors) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // Handle Retina DPi Scaling
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * 2;
+  canvas.height = rect.height * 2;
+  ctx.scale(2, 2);
+
+  const width = rect.width;
+  const height = rect.height;
+  const padding = 35;
+  const chartHeight = height - padding * 2;
+  const chartWidth = width - padding * 2;
+
+  ctx.clearRect(0, 0, width, height);
+
+  const maxValue = Math.max(...data, 5);
+  const barWidth = Math.min((chartWidth / data.length) - 15, 45);
+
+  // Draw Grid Lines
+  ctx.strokeStyle = '#E8DCC8';
+  ctx.lineWidth = 1;
+  ctx.font = '11px sans-serif';
+  ctx.fillStyle = '#7A6A62';
+
+  for (let i = 0; i <= 4; i++) {
+    const y = padding + (chartHeight / 4) * i;
+    const val = Math.round(maxValue - (maxValue / 4) * i);
+    ctx.beginPath();
+    ctx.moveTo(padding, y);
+    ctx.lineTo(width - padding, y);
+    ctx.stroke();
+    ctx.fillText(val, 8, y + 4);
+  }
+
+  // Draw Bars
+  data.forEach((val, idx) => {
+    const x = padding + 20 + idx * (chartWidth / data.length);
+    const barH = (val / maxValue) * chartHeight;
+    const y = height - padding - barH;
+
+    ctx.fillStyle = colors[idx % colors.length] || '#7B1E2B';
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(x, y, barWidth, barH, [4, 4, 0, 0]) : ctx.rect(x, y, barWidth, barH);
+    ctx.fill();
+
+    // Draw Bar Label & Value
+    ctx.fillStyle = '#2E1F1A';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(val, x + barWidth / 2, y - 6);
+
+    ctx.fillStyle = '#7A6A62';
+    ctx.font = '11px sans-serif';
+    ctx.fillText(labels[idx], x + barWidth / 2, height - padding + 18);
+  });
+}
+
+// STANDALONE OFFLINE CANVAS DONUT / PIE CHART GENERATOR
+function drawCanvasDonutChart(canvasId, labels, data, colors) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * 2;
+  canvas.height = rect.height * 2;
+  ctx.scale(2, 2);
+
+  const width = rect.width;
+  const height = rect.height;
+  const total = data.reduce((a, b) => a + b, 0);
+
+  ctx.clearRect(0, 0, width, height);
+
+  if (total === 0) {
+    ctx.fillStyle = '#7A6A62';
+    ctx.font = '14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('No Data Available', width / 2, height / 2);
+    return;
+  }
+
+  const centerX = width / 3;
+  const centerY = height / 2;
+  const outerRadius = Math.min(centerX, centerY) - 10;
+  const innerRadius = outerRadius * 0.6;
+
+  let startAngle = -0.5 * Math.PI;
+
+  data.forEach((val, idx) => {
+    const sliceAngle = (val / total) * 2 * Math.PI;
+    const endAngle = startAngle + sliceAngle;
+
+    ctx.fillStyle = colors[idx % colors.length];
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, outerRadius, startAngle, endAngle);
+    ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
+    ctx.closePath();
+    ctx.fill();
+
+    startAngle = endAngle;
+  });
+
+  // Draw Legend on Right Side
+  const legendX = centerX + outerRadius + 25;
+  let legendY = 40;
+
+  labels.forEach((label, idx) => {
+    const val = data[idx];
+    const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+
+    ctx.fillStyle = colors[idx % colors.length];
+    ctx.beginPath();
+    ctx.arc(legendX, legendY, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#2E1F1A';
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${label}: ${val} (${pct}%)`, legendX + 14, legendY + 4);
+
+    legendY += 28;
   });
 }
 

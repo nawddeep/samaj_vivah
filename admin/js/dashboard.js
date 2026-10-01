@@ -1,10 +1,16 @@
 /* ==========================================================================
-   DASHBOARD.JS - Dashboard Controller & Dynamic Analytics
+   DASHBOARD.JS - Dashboard Controller & Dynamic Canvas Analytics
    ========================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
   renderDashboardMetrics();
+  renderDashboardCharts();
   renderRecentActivity();
+
+  // Re-render charts on window resize
+  window.addEventListener('resize', () => {
+    renderDashboardCharts();
+  });
 });
 
 function renderDashboardMetrics() {
@@ -47,6 +53,40 @@ function renderDashboardMetrics() {
   if (publishedProfilesEl) publishedProfilesEl.textContent = publishedProfiles;
   if (hiddenProfilesEl) hiddenProfilesEl.textContent = hiddenProfiles;
   if (draftProfilesEl) draftProfilesEl.textContent = draftProfiles;
+}
+
+function renderDashboardCharts() {
+  const users = typeof getUsers === 'function' ? getUsers() : [];
+  const profiles = typeof getProfiles === 'function' ? getProfiles() : [];
+
+  // Profile Breakdown Donut Chart
+  const publishedCount = profiles.filter(p => p.status === 'published').length;
+  const hiddenCount = profiles.filter(p => p.status === 'hidden').length;
+  const draftCount = profiles.filter(p => p.status === 'draft').length;
+
+  if (typeof drawCanvasDonutChart === 'function') {
+    drawCanvasDonutChart(
+      'profile-donut-canvas',
+      ['Published', 'Hidden', 'Draft'],
+      [publishedCount, hiddenCount, draftCount],
+      ['#7B1E2B', '#1976D2', '#B7791F']
+    );
+  }
+
+  // User Status Breakdown Bar Chart
+  const pendingUsers = users.filter(u => u.status === 'pending').length;
+  const approvedUsers = users.filter(u => u.status === 'approved').length;
+  const rejectedUsers = users.filter(u => u.status === 'rejected').length;
+  const blockedUsers = users.filter(u => u.status === 'blocked').length;
+
+  if (typeof drawCanvasBarChart === 'function') {
+    drawCanvasBarChart(
+      'user-bar-canvas',
+      ['Pending', 'Approved', 'Rejected', 'Blocked'],
+      [pendingUsers, approvedUsers, rejectedUsers, blockedUsers],
+      ['#B7791F', '#2E7D4F', '#B3261E', '#5A1220']
+    );
+  }
 }
 
 function renderRecentActivity() {

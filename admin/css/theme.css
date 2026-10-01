@@ -3,14 +3,14 @@
    ========================================================================== */
 
 :root {
-  /* Color Palette - User Defined Premium Matrimonial Theme */
+  /* Color Palette - Premium Matrimonial Theme */
   --cream: #FFF8EC;        /* Main Page Background */
   --ivory: #FFFDF7;        /* Cards & Surface Background */
   --maroon: #7B1E2B;       /* Primary Brand, Primary Buttons, Active Items */
   --maroon-deep: #5A1220;  /* Hover/Pressed, Sidebar Dark Background */
   --gold: #C9A24D;         /* Badges, Accents, Highlights */
   --gold-light: #FBF6E9;   /* Soft Gold Tint */
-  --gold-dark: #8F6D23;    /* Muted Gold for Text */
+  --gold-dark: #8F6D23;    /* Muted Gold Text */
   --text: #2E1F1A;         /* Primary Text */
   --text-soft: #7A6A62;    /* Muted Text */
   --border: #E8DCC8;      /* Thin Sand Border */
@@ -65,6 +65,7 @@ body {
   line-height: 1.5;
   font-size: 1rem;
   min-height: 100vh;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -76,9 +77,9 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.01em;
 }
 
-h1 { font-size: 1.85rem; }
-h2 { font-size: 1.45rem; }
-h3 { font-size: 1.2rem; }
+h1 { font-size: clamp(1.4rem, 4vw, 1.85rem); }
+h2 { font-size: clamp(1.2rem, 3vw, 1.45rem); }
+h3 { font-size: clamp(1.05rem, 2.5vw, 1.2rem); }
 h4 { font-size: 1.05rem; }
 
 a {
@@ -111,9 +112,10 @@ a:hover {
   background-color: var(--ivory);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 1.5rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
   box-shadow: var(--shadow-sm);
   transition: box-shadow var(--transition-normal), border-color var(--transition-normal);
+  width: 100%;
 }
 
 .card:hover {
@@ -127,6 +129,8 @@ a:hover {
   margin-bottom: 1.25rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .card-title {
@@ -156,6 +160,7 @@ a:hover {
   user-select: none;
   text-decoration: none !important;
   white-space: nowrap;
+  touch-action: manipulation;
 }
 
 .btn:focus-visible {
@@ -227,7 +232,7 @@ a:hover {
 }
 
 .btn-sm {
-  min-height: 36px;
+  min-height: 38px;
   padding: 0.35rem 0.75rem;
   font-size: 0.85rem;
   border-radius: var(--radius-sm);
@@ -475,6 +480,7 @@ textarea.form-control {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 /* Toast Notification */
@@ -486,7 +492,8 @@ textarea.form-control {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  max-width: 360px;
+  max-width: calc(100vw - 3rem);
+  width: 360px;
 }
 
 .toast {
@@ -547,4 +554,68 @@ textarea.form-control {
   font-size: 0.875rem;
   max-width: 420px;
   margin: 0 auto;
+}
+
+/* Canvas Analytics Chart Containers */
+.chart-container-box {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  margin-top: 0.5rem;
+}
+
+.chart-container-box canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Lightbox Image Carousel */
+.lightbox-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(5px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.lightbox-img {
+  max-width: 90vw;
+  max-height: 80vh;
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  object-fit: contain;
+}
+
+.lightbox-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.lightbox-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: background 0.2s ease;
+}
+
+.lightbox-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
 }
