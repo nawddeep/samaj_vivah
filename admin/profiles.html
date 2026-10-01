@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Profiles - Matrimonial Admin Panel</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <style>
+    .avatar-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      object-fit: cover;
+      border: 1px solid var(--border);
+      background-color: var(--cream);
+    }
+
+    .pagination-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .page-btn {
+      min-width: 36px;
+      height: 36px;
+      padding: 0 0.5rem;
+      font-size: 0.85rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--ivory);
+      cursor: pointer;
+    }
+
+    .page-btn.active {
+      background: var(--maroon);
+      color: var(--cream);
+      border-color: var(--maroon);
+      font-weight: bold;
+    }
+
+    .page-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Mobile Responsive Card Layout for Profiles */
+    @media (max-width: 768px) {
+      .table-responsive {
+        display: none;
+      }
+
+      .mobile-cards-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .profile-mobile-card {
+        background: var(--ivory);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .mobile-cards-list {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand-icon">M</div>
+        <div>
+          <div class="sidebar-brand-title">Community Matrimony</div>
+          <div class="sidebar-brand-subtitle">Admin Panel</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Navigation</div>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a href="dashboard.html" class="nav-link">
+              <span class="nav-link-icon">
+                <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+              </span>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="approvals.html" class="nav-link">
+              <span class="nav-link-icon">
+                <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 16 14"/></svg>
+              </span>
+              <span>User Approvals</span>
+              <span class="nav-badge pending-approvals-badge" style="display: none;">0</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="add-profile.html" class="nav-link">
+              <span class="nav-link-icon">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/></svg>
+              </span>
+              <span>Add Profile</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="profiles.html" class="nav-link active">
+              <span class="nav-link-icon">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </span>
+              <span>Profiles</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="users.html" class="nav-link">
+              <span class="nav-link-icon">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </span>
+              <span>Users</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button type="button" class="sidebar-footer-btn reset-btn reset-demo-btn">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21.5 2v6h-6"/><path d="M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          Reset Demo Data
+        </button>
+        <button type="button" class="sidebar-footer-btn logout-btn">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <button type="button" class="mobile-menu-toggle" aria-label="Toggle Navigation Menu">☰</button>
+          <h1 class="page-title">Manage Profiles</h1>
+        </div>
+        
+        <div class="header-right">
+          <span class="badge badge-demo">Demo Version</span>
+          <div class="admin-profile">
+            <div class="admin-avatar">SA</div>
+            <div class="admin-info">
+              <span class="admin-name">System Admin</span>
+              <span class="admin-role">Administrator</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Body -->
+      <div class="page-body">
+        
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+          <div class="filter-inputs">
+            <!-- Search -->
+            <div class="search-input-wrap">
+              <span class="search-icon">
+                <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </span>
+              <input type="text" id="search-input" class="form-control" placeholder="Search by name, city, or phone...">
+            </div>
+
+            <!-- Status Filter -->
+            <select id="filter-status" class="form-select" style="width: auto; min-width: 140px;">
+              <option value="all">All Statuses</option>
+              <option value="published">Published</option>
+              <option value="hidden">Hidden</option>
+              <option value="draft">Draft</option>
+            </select>
+
+            <!-- Gender Filter -->
+            <select id="filter-gender" class="form-select" style="width: auto; min-width: 130px;">
+              <option value="all">All Genders</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+
+            <!-- Age Range Filter -->
+            <select id="filter-age" class="form-select" style="width: auto; min-width: 140px;">
+              <option value="all">All Ages</option>
+              <option value="18-25">18 - 25 Yrs</option>
+              <option value="26-30">26 - 30 Yrs</option>
+              <option value="31-35">31 - 35 Yrs</option>
+              <option value="36+">36+ Yrs</option>
+            </select>
+
+            <!-- Sort -->
+            <select id="filter-sort" class="form-select" style="width: auto; min-width: 140px;">
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+            </select>
+          </div>
+
+          <a href="add-profile.html" class="btn btn-primary" style="white-space: nowrap;">
+            <svg class="svg-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add New Profile
+          </a>
+        </div>
+
+        <!-- Profiles Container Card -->
+        <div class="card">
+          <!-- Desktop Table View -->
+          <div class="table-responsive">
+            <table class="table" id="profiles-table">
+              <thead>
+                <tr>
+                  <th>Photo</th>
+                  <th>Name</th>
+                  <th>Age / Gender</th>
+                  <th>City</th>
+                  <th>Profession</th>
+                  <th>Masked Contact</th>
+                  <th>Status</th>
+                  <th>Updated Date</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="profiles-tbody">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Mobile Cards View -->
+          <div class="mobile-cards-list" id="profiles-mobile-list">
+            <!-- Rendered dynamically on mobile -->
+          </div>
+
+          <!-- Empty State Container -->
+          <div id="profiles-empty-container"></div>
+
+          <!-- Pagination Bar -->
+          <div class="pagination-bar" id="pagination-bar" style="display: none;">
+            <div style="font-size: 0.85rem; color: var(--text-soft);" id="pagination-info">
+              Showing 1-10 of 15 profiles
+            </div>
+            <div class="pagination-controls" id="pagination-controls">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- JavaScript Modules -->
+  <script src="js/store.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/validators.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/profiles.js"></script>
+</body>
+</html>

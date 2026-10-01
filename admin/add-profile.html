@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add / Edit Profile - Matrimonial Admin Panel</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <style>
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 0.85rem;
+      margin-top: 0.75rem;
+    }
+
+    .photo-thumb-wrap {
+      position: relative;
+      width: 100%;
+      height: 110px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 2px solid var(--border);
+      background: var(--cream);
+    }
+
+    .photo-thumb-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .main-badge-overlay {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      background: var(--gold);
+      color: var(--maroon-deep);
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .photo-remove-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(179, 38, 30, 0.85);
+      color: white;
+      border: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+    }
+
+    .photo-remove-btn:hover {
+      background: var(--danger);
+    }
+
+    .upload-dropzone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      background-color: var(--ivory);
+      transition: border-color var(--transition-fast), background-color var(--transition-fast);
+    }
+
+    .upload-dropzone:hover {
+      border-color: var(--maroon);
+      background-color: rgba(123, 30, 43, 0.02);
+    }
+
+    .file-preview-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--gold-light);
+      border: 1px solid var(--gold);
+      padding: 0.65rem 0.85rem;
+      border-radius: var(--radius-md);
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand-icon">M</div>
+        <div>
+          <div class="sidebar-brand-title">Community Matrimony</div>
+          <div class="sidebar-brand-subtitle">Admin Panel</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Navigation</div>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a href="dashboard.html" class="nav-link">
+              <span class="nav-link-icon">
+                <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+              </span>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="approvals.html" class="nav-link">
+              <span class="nav-link-icon">
+                <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 12 16 14"/></svg>
+              </span>
+              <span>User Approvals</span>
+              <span class="nav-badge pending-approvals-badge" style="display: none;">0</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="add-profile.html" class="nav-link active" id="nav-add-profile">
+              <span class="nav-link-icon">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/></svg>
+              </span>
+              <span id="nav-add-profile-text">Add Profile</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="profiles.html" class="nav-link">
+              <span class="nav-link-icon">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </span>
+              <span>Profiles</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="users.html" class="nav-link">
+              <span class="nav-link-icon">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </span>
+              <span>Users</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button type="button" class="sidebar-footer-btn reset-btn reset-demo-btn">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21.5 2v6h-6"/><path d="M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          Reset Demo Data
+        </button>
+        <button type="button" class="sidebar-footer-btn logout-btn">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <button type="button" class="mobile-menu-toggle" aria-label="Toggle Navigation Menu">☰</button>
+          <h1 class="page-title" id="page-heading">Add New Profile</h1>
+        </div>
+        
+        <div class="header-right">
+          <span class="badge badge-demo">Demo Version</span>
+          <div class="admin-profile">
+            <div class="admin-avatar">SA</div>
+            <div class="admin-info">
+              <span class="admin-name">System Admin</span>
+              <span class="admin-role">Administrator</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Body -->
+      <div class="page-body">
+        
+        <form id="profile-form" novalidate style="max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem;">
+          <input type="hidden" id="profile-id" value="">
+
+          <!-- Section 1: Personal Information -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Personal Information
+              </h3>
+            </div>
+            
+            <div class="grid grid-cols-2">
+              <div class="form-group" id="group-name">
+                <label for="name" class="form-label">Full Name <span class="required">*</span></label>
+                <input type="text" id="name" class="form-control" placeholder="e.g. Aarav Sharma">
+                <div class="invalid-feedback">Full name is required.</div>
+              </div>
+
+              <div class="form-group" id="group-gender">
+                <label for="gender" class="form-label">Gender <span class="required">*</span></label>
+                <select id="gender" class="form-select">
+                  <option value="">Select Gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+                <div class="invalid-feedback">Gender is required for publishing.</div>
+              </div>
+
+              <div class="form-group" id="group-age">
+                <label for="age" class="form-label">Age (Years) <span class="required">*</span></label>
+                <input type="number" id="age" class="form-control" placeholder="18 - 70" min="18" max="70">
+                <div class="invalid-feedback">Age must be between 18 and 70.</div>
+              </div>
+
+              <div class="form-group" id="group-height">
+                <label for="height" class="form-label">Height</label>
+                <input type="text" id="height" class="form-control" placeholder="e.g. 5'10&quot;">
+              </div>
+
+              <div class="form-group" id="group-maritalStatus">
+                <label for="maritalStatus" class="form-label">Marital Status</label>
+                <select id="maritalStatus" class="form-select">
+                  <option value="Never Married">Never Married</option>
+                  <option value="Divorced">Divorced</option>
+                  <option value="Widowed">Widowed</option>
+                  <option value="Awaiting Divorce">Awaiting Divorce</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="group-city">
+                <label for="city" class="form-label">City / Location <span class="required">*</span></label>
+                <input type="text" id="city" class="form-control" placeholder="e.g. Mumbai">
+                <div class="invalid-feedback">City is required.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Education & Professional -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                Education & Career
+              </h3>
+            </div>
+
+            <div class="grid grid-cols-3">
+              <div class="form-group" id="group-education">
+                <label for="education" class="form-label">Highest Education <span class="required">*</span></label>
+                <input type="text" id="education" class="form-control" placeholder="e.g. B.Tech / MBA / MBBS">
+                <div class="invalid-feedback">Education is required.</div>
+              </div>
+
+              <div class="form-group" id="group-profession">
+                <label for="profession" class="form-label">Profession / Occupation <span class="required">*</span></label>
+                <input type="text" id="profession" class="form-control" placeholder="e.g. Software Engineer">
+                <div class="invalid-feedback">Profession is required.</div>
+              </div>
+
+              <div class="form-group" id="group-income">
+                <label for="income" class="form-label">Annual Income</label>
+                <input type="text" id="income" class="form-control" placeholder="e.g. 15-20 LPA">
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Family Details -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Family Details
+              </h3>
+            </div>
+
+            <div class="grid grid-cols-2">
+              <div class="form-group" id="group-fatherName">
+                <label for="fatherName" class="form-label">Father's Name</label>
+                <input type="text" id="fatherName" class="form-control" placeholder="Father's full name">
+              </div>
+
+              <div class="form-group" id="group-fatherOccupation">
+                <label for="fatherOccupation" class="form-label">Father's Occupation</label>
+                <input type="text" id="fatherOccupation" class="form-control" placeholder="e.g. Retired Engineer">
+              </div>
+
+              <div class="form-group" id="group-motherName">
+                <label for="motherName" class="form-label">Mother's Name</label>
+                <input type="text" id="motherName" class="form-control" placeholder="Mother's full name">
+              </div>
+
+              <div class="form-group" id="group-siblings">
+                <label for="siblings" class="form-label">Siblings Information</label>
+                <input type="text" id="siblings" class="form-control" placeholder="e.g. 1 Brother, 1 Sister">
+              </div>
+
+              <div class="form-group" id="group-familyType">
+                <label for="familyType" class="form-label">Family Type</label>
+                <select id="familyType" class="form-select">
+                  <option value="Nuclear">Nuclear Family</option>
+                  <option value="Joint">Joint Family</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Community / Religion Details -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                Religion & Community Details
+              </h3>
+            </div>
+
+            <div class="form-group" id="group-religionDetails">
+              <label for="religionDetails" class="form-label">Sub-community / Gotra / Caste Details</label>
+              <input type="text" id="religionDetails" class="form-control" placeholder="e.g. Brahmin - Kaushik Gotra">
+            </div>
+          </div>
+
+          <!-- Section 5: Partner Expectations & Contact -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Expectations & Contact Info
+              </h3>
+            </div>
+
+            <div class="form-group" id="group-expectations">
+              <label for="expectations" class="form-label">Partner Expectations</label>
+              <textarea id="expectations" class="form-control" placeholder="Describe qualities, education, and preferences expected in a partner..."></textarea>
+            </div>
+
+            <div class="form-group" id="group-contactNumber">
+              <label for="contactNumber" class="form-label">Contact Number (Full 10-Digits) <span class="required">*</span></label>
+              <input type="tel" id="contactNumber" class="form-control" placeholder="e.g. 9876543210" maxlength="10">
+              <div class="invalid-feedback">Valid 10-digit phone number starting 6-9 is required.</div>
+              <span class="form-hint">Note: Contact numbers remain masked in public lists and are only viewable by approved users.</span>
+            </div>
+          </div>
+
+          <!-- Section 6: Photos & Biodata Upload -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                Photos & Biodata Document
+              </h3>
+            </div>
+
+            <!-- Photos -->
+            <div class="form-group" id="group-photos">
+              <label class="form-label">Profile Photos (Upload Up to 5 Images) <span class="required" id="photo-req-star">*</span></label>
+              <div class="upload-dropzone" id="photo-dropzone">
+                <span style="display: block; margin-bottom: 0.5rem; color: var(--maroon);">
+                  <svg class="svg-icon" viewBox="0 0 24 24" style="width: 36px; height: 36px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </span>
+                <p style="font-size: 0.9rem; font-weight: 500;">Click or drag images here to upload</p>
+                <span class="form-hint">JPG, PNG, or WEBP (Max 2MB per photo). First photo becomes the main avatar.</span>
+                <input type="file" id="photo-file-input" accept="image/jpeg,image/png,image/webp" multiple style="display: none;">
+              </div>
+              <div class="invalid-feedback" id="photos-error-msg">At least 1 photo is required for publishing.</div>
+              
+              <div class="photo-grid" id="photo-preview-grid">
+                <!-- Preview items rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- Biodata File -->
+            <div class="form-group" id="group-biodata" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--border);">
+              <label class="form-label">Biodata Document (Optional PDF or Image)</label>
+              <div class="upload-dropzone" id="biodata-dropzone" style="padding: 1rem;">
+                <span style="display: block; margin-bottom: 0.3rem; color: var(--maroon);">
+                  <svg class="svg-icon" viewBox="0 0 24 24" style="width: 28px; height: 28px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </span>
+                <span style="font-size: 0.85rem; font-weight: 500; display: block;">Click to upload Biodata (PDF/JPG/PNG - Max 3MB)</span>
+                <input type="file" id="biodata-file-input" accept="application/pdf,image/jpeg,image/png" style="display: none;">
+              </div>
+              <div class="invalid-feedback" id="biodata-error-msg"></div>
+
+              <div id="biodata-preview-container">
+                <!-- Biodata file badge rendered dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons Bar -->
+          <div style="display: flex; gap: 1rem; justify-content: flex-end; align-items: center; margin-top: 1rem;">
+            <a href="profiles.html" class="btn btn-outline" id="cancel-btn">Cancel</a>
+            <button type="button" class="btn btn-secondary" id="save-draft-btn">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Save as Draft
+            </button>
+            <button type="button" class="btn btn-primary" id="publish-btn">
+              <svg class="svg-icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Publish Profile
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- JavaScript Modules -->
+  <script src="js/store.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/validators.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/add-profile.js"></script>
+</body>
+</html>
