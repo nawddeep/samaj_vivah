@@ -1,6 +1,6 @@
-SAMAJ VIVAH - HARDCODED CLIENT DEMO (work in progress: Part 2 of 3, onboarding + main app)
-1. On a computer: open the user folder and double-click index.html (Chrome, Edge, Safari or Firefox). VS Code Live Server also works.
-2. On a phone: copy the user folder to the phone (or share it by cloud drive) and open index.html in the phone browser. The app fills the whole screen.
-3. All data is fake and lives in js/data.js. Any phone number and any 4 digit OTP work. Nothing is saved after a refresh.
-4. Internet is only needed for the Google Fonts; a system font is used if offline.
+SAMAJ VIVAH - MEMBER APP (demo, integrated with the admin panel)
+1. Open the REPO ROOT index.html (or serve the repo folder with VS Code Live Server) and use its two buttons. Both apps must be opened from the same address so they share data.
+2. The member app reads and writes the admin panel's own browser data (mm_users, mm_profiles, mm_activity) through ../admin/js/store.js and js/bridge.js. Nothing in the admin panel was changed.
+3. New numbers go through onboarding and appear in the admin's User Approvals. Approve, reject or block them there and the member app updates by itself. Hidden or draft profiles never show to members.
+4. The OTP is hardcoded (1234) and fills in by itself. Ready-made members: 9000000005 approved, 9000000001 pending, 9000000009 rejected, 9000000011 blocked.
 5. Real screenshot blocking needs the Flutter app on Android; iOS can only show a watermark.

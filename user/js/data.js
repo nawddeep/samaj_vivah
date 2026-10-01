@@ -1,7 +1,7 @@
 /* data.js: ALL fake data for the demo. Nobody here is a real person. Photos are drawn with inline SVG. */
 
 var APP_NAME = 'Samaj Vivah';
-var TAGLINE = 'Find your life partner within your community';
+var TAGLINE = 'Find your life partner in the Sindhi community';
 var SUPPORT_NUMBER = '90000 99999';
 var DEMO_OTP = '1234';
 var REJECTION_REASON = 'Photo is not clear, please upload a clear face photo.';
@@ -39,19 +39,9 @@ var OPTIONS = {
     { value: 'Brother', gender: 'male' }, { value: 'Sister', gender: 'female' }, { value: 'Relative', gender: '' },
     { value: 'Friend', gender: '' }
   ],
-  maritalStatus: ['Never married', 'Divorced', 'Widowed', 'Awaiting divorce', 'Annulled'],
-  religions: ['Hindu', 'Jain', 'Sikh', 'Buddhist', 'Muslim', 'Christian'],
-  communities: {
-    Hindu: ['Agarwal', 'Maheshwari', 'Khandelwal', 'Oswal', 'Porwal', 'Brahmin', 'Rajput', 'Patel', 'Kayastha', 'Soni'],
-    Jain: ['Oswal', 'Porwal', 'Agarwal Jain', 'Digambar', 'Shwetambar'],
-    Sikh: ['Jat Sikh', 'Khatri', 'Arora', 'Ramgarhia'],
-    Buddhist: ['Mahayana', 'Theravada'],
-    Muslim: ['Sunni', 'Shia', 'Bohra'],
-    Christian: ['Catholic', 'Protestant', 'Syrian']
-  },
-  subCommunities: ['Bisa', 'Dasa', 'Goyal', 'Mittal', 'Singhal', 'Bansal', 'Gupta', 'Not particular'],
-  gotras: ['Kashyap', 'Bharadwaj', 'Vasishtha', 'Gautam', 'Atri', 'Garg', 'Goyal', 'Kaushik', 'Mudgal', 'Vatsa', 'Don\'t know'],
-  languages: ['Hindi', 'Marathi', 'Gujarati', 'Rajasthani', 'Punjabi', 'Bengali', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'English', 'Marwari'],
+  maritalStatus: ['Never Married', 'Divorced', 'Widowed', 'Awaiting Divorce', 'Annulled'],
+  religions: ['Hindu', 'Sikh'],
+  languages: ['Sindhi', 'Hindi', 'Gujarati', 'Marathi', 'Punjabi', 'English'],
   countries: ['India', 'United States', 'United Kingdom', 'Canada', 'United Arab Emirates', 'Australia', 'Singapore'],
   residency: ['Citizen', 'Permanent resident', 'Work permit', 'Student visa', 'Temporary visa'],
   qualifications: ['High school', 'Diploma', 'B.A.', 'B.Com', 'B.Sc', 'B.Tech', 'B.E.', 'B.Des', 'B.Pharm', 'MBBS', 'CA', 'CS', 'MBA', 'M.Com', 'M.Sc', 'M.Tech', 'M.Ed', 'PhD'],
@@ -59,7 +49,7 @@ var OPTIONS = {
   employment: ['Private', 'Government', 'Business', 'Self-employed', 'Student', 'Not working'],
   professions: ['Software Engineer', 'Doctor', 'Chartered Accountant', 'School Teacher', 'College Lecturer', 'Business Owner', 'Government Officer', 'Designer', 'Bank Manager', 'Civil Engineer', 'Marketing Manager', 'Project Manager', 'Accounts Executive', 'Lawyer', 'Architect', 'Student'],
   incomes: ['Below 3 LPA', '3-5 LPA', '5-8 LPA', '8-12 LPA', '12-18 LPA', '18-25 LPA', '25-35 LPA', 'Above 35 LPA'],
-  diets: ['Vegetarian', 'Non-vegetarian', 'Eggetarian', 'Jain'],
+  diets: ['Vegetarian', 'Non-vegetarian', 'Eggetarian'],
   habits: ['No', 'Occasionally', 'Yes'],
   hobbies: ['Reading', 'Travelling', 'Cooking', 'Music', 'Dancing', 'Yoga', 'Cricket', 'Photography', 'Movies', 'Gardening', 'Painting', 'Fitness', 'Trekking', 'Volunteering'],
   manglik: ['Yes', 'No', 'Anshik', 'Don\'t know'],
@@ -71,20 +61,20 @@ var OPTIONS = {
   familyValues: ['Traditional', 'Moderate', 'Liberal'],
   familyIncomes: ['Below 5 LPA', '5-10 LPA', '10-20 LPA', '20-40 LPA', 'Above 40 LPA'],
   photoPrivacy: [
-    { value: 'all', label: 'Visible to all members', sub: 'Every member of the community can see my photos.' },
+    { value: 'all', label: 'Visible to all members', sub: 'Every member of the Sindhi community can see my photos.' },
     { value: 'approved', label: 'Only approved members', sub: 'Only members with an approved profile can see my photos.' },
     { value: 'interest', label: 'Only after I accept interest', sub: 'Photos stay hidden until I accept an interest.' }
   ],
   idTypes: ['Aadhaar', 'PAN', 'Driving licence'],
-  sampleFiles: ['biodata_rahul_sharma.pdf', 'biodata_scan_page1.jpg', 'family_biodata_2026.pdf'],
+  sampleFiles: ['biodata_rahul_lalwani.pdf', 'biodata_scan_page1.jpg', 'family_biodata_2026.pdf'],
   sampleIdFiles: ['aadhaar_front.jpg', 'pan_card.jpg', 'driving_licence.pdf'],
   sampleKundali: ['kundali_rahul.pdf', 'janam_patri.jpg']
 };
 
 var LOCATIONS = {
   'India': {
-    'Maharashtra': ['Mumbai', 'Pune', 'Nagpur', 'Nashik'],
-    'Rajasthan': ['Jaipur', 'Jodhpur', 'Udaipur', 'Kota'],
+    'Maharashtra': ['Mumbai', 'Ulhasnagar', 'Pune', 'Nagpur', 'Nashik'],
+    'Rajasthan': ['Jaipur', 'Ajmer', 'Jodhpur', 'Udaipur', 'Kota'],
     'Gujarat': ['Ahmedabad', 'Surat', 'Vadodara', 'Rajkot'],
     'Madhya Pradesh': ['Indore', 'Bhopal', 'Gwalior', 'Jabalpur'],
     'Delhi NCR': ['New Delhi', 'Gurugram', 'Noida'],
@@ -231,28 +221,28 @@ var HOBBY_SETS = [
 var ACTIVE_TEXT = ['Online now', 'Active today', 'Active 2 hours ago', 'Active yesterday', 'Active 3 days ago'];
 
 // name, gender, age, city, education, college, profession, employment, company, income, heightIn, marital,
-// religion, community, motherTongue, diet, avatar { skin, hair, hairColor, beard, glasses }
+// religion, community (always Sindhi), motherTongue, diet, avatar { skin, hair, hairColor, beard, glasses }
 var PEOPLE = [
-  ['Priya Sharma', 'female', 26, 'Jaipur', 'MBA', 'IIM Udaipur', 'Marketing Manager', 'Private', 'BrightLeaf Foods', '8-12 LPA', 64, 'Never married', 'Hindu', 'Agarwal', 'Hindi', 'Vegetarian', { skin: 1, hair: 'long', hairColor: 1 }],
-  ['Ananya Patel', 'female', 27, 'Ahmedabad', 'M.Sc', 'Gujarat University', 'College Lecturer', 'Private', 'City Arts College', '5-8 LPA', 63, 'Never married', 'Hindu', 'Patel', 'Gujarati', 'Vegetarian', { skin: 2, hair: 'bun', hairColor: 0 }],
-  ['Diya Mehta', 'female', 25, 'Mumbai', 'B.Des', 'NID Ahmedabad', 'Designer', 'Private', 'Studio Kalpana', '5-8 LPA', 65, 'Never married', 'Jain', 'Oswal', 'Gujarati', 'Jain', { skin: 0, hair: 'bob', hairColor: 2 }],
-  ['Ishita Agarwal', 'female', 24, 'New Delhi', 'B.Com', 'Delhi University', 'Accounts Executive', 'Private', 'Nova Traders', '3-5 LPA', 62, 'Never married', 'Hindu', 'Agarwal', 'Hindi', 'Vegetarian', { skin: 1, hair: 'braid', hairColor: 0 }],
-  ['Saanvi Joshi', 'female', 29, 'Pune', 'MBBS', 'BJ Medical College', 'Doctor', 'Private', 'Sahyadri Hospital', '18-25 LPA', 63, 'Never married', 'Hindu', 'Brahmin', 'Marathi', 'Eggetarian', { skin: 2, hair: 'long', hairColor: 1, glasses: true }],
-  ['Kavya Maheshwari', 'female', 28, 'Indore', 'CA', 'ICAI', 'Chartered Accountant', 'Self-employed', 'Maheshwari and Co.', '12-18 LPA', 64, 'Never married', 'Hindu', 'Maheshwari', 'Hindi', 'Vegetarian', { skin: 0, hair: 'bob', hairColor: 0 }],
-  ['Myra Jain', 'female', 23, 'Bengaluru', 'B.Tech', 'RV College', 'Software Engineer', 'Private', 'CloudNine Tech', '8-12 LPA', 65, 'Never married', 'Jain', 'Porwal', 'Hindi', 'Jain', { skin: 1, hair: 'long', hairColor: 2 }],
-  ['Tanvi Rathore', 'female', 31, 'Jaipur', 'M.Ed', 'Rajasthan University', 'School Teacher', 'Government', 'Govt. Girls School', '5-8 LPA', 62, 'Divorced', 'Hindu', 'Rajput', 'Rajasthani', 'Vegetarian', { skin: 2, hair: 'bun', hairColor: 1 }],
-  ['Riya Bansal', 'female', 22, 'Chandigarh', 'B.Des', 'Chitkara University', 'Designer', 'Private', 'Pixel Loom', '3-5 LPA', 64, 'Never married', 'Hindu', 'Agarwal', 'Punjabi', 'Eggetarian', { skin: 0, hair: 'braid', hairColor: 2 }],
-  ['Neha Oswal', 'female', 33, 'Hyderabad', 'MBA', 'ISB Hyderabad', 'Bank Manager', 'Private', 'Deccan Bank', '18-25 LPA', 63, 'Divorced', 'Jain', 'Oswal', 'Hindi', 'Jain', { skin: 1, hair: 'bob', hairColor: 4, glasses: true }],
-  ['Aarav Mehta', 'male', 29, 'Pune', 'B.Tech', 'COEP Pune', 'Software Engineer', 'Private', 'Infrabyte', '12-18 LPA', 70, 'Never married', 'Jain', 'Oswal', 'Gujarati', 'Jain', { skin: 1, hair: 'short', hairColor: 0 }],
-  ['Kabir Joshi', 'male', 31, 'Indore', 'CA', 'ICAI', 'Chartered Accountant', 'Self-employed', 'Joshi Associates', '18-25 LPA', 68, 'Never married', 'Hindu', 'Brahmin', 'Hindi', 'Vegetarian', { skin: 2, hair: 'side', hairColor: 1, glasses: true }],
-  ['Vihaan Gupta', 'male', 33, 'New Delhi', 'MBBS', 'AIIMS Delhi', 'Doctor', 'Private', 'Capital Care Hospital', '25-35 LPA', 71, 'Divorced', 'Hindu', 'Agarwal', 'Hindi', 'Non-vegetarian', { skin: 1, hair: 'short', hairColor: 4, beard: 'stubble' }],
-  ['Reyansh Bansal', 'male', 28, 'Mumbai', 'MBA', 'NMIMS', 'Business Owner', 'Business', 'Bansal Exports', '18-25 LPA', 69, 'Never married', 'Hindu', 'Agarwal', 'Hindi', 'Vegetarian', { skin: 0, hair: 'curly', hairColor: 0 }],
-  ['Arjun Soni', 'male', 27, 'Ahmedabad', 'B.E.', 'LD Engineering College', 'Civil Engineer', 'Government', 'State PWD', '8-12 LPA', 67, 'Never married', 'Hindu', 'Soni', 'Gujarati', 'Vegetarian', { skin: 2, hair: 'side', hairColor: 2 }],
-  ['Rohan Oswal', 'male', 35, 'Bengaluru', 'M.Tech', 'IIT Madras', 'Project Manager', 'Private', 'Vertex Systems', '25-35 LPA', 72, 'Divorced', 'Jain', 'Oswal', 'Hindi', 'Jain', { skin: 1, hair: 'short', hairColor: 4, beard: 'full', glasses: true }],
-  ['Yash Kothari', 'male', 30, 'Jaipur', 'B.Com', 'Rajasthan University', 'Business Owner', 'Business', 'Kothari Jewels', 'Above 35 LPA', 69, 'Never married', 'Jain', 'Oswal', 'Rajasthani', 'Jain', { skin: 0, hair: 'curly', hairColor: 1, beard: 'stubble' }],
-  ['Advait Rathi', 'male', 26, 'Nagpur', 'B.Pharm', 'Nagpur University', 'Government Officer', 'Government', 'Health Department', '5-8 LPA', 68, 'Never married', 'Hindu', 'Maheshwari', 'Marathi', 'Vegetarian', { skin: 3, hair: 'short', hairColor: 0 }],
-  ['Dhruv Khandelwal', 'male', 36, 'Kolkata', 'MBA', 'XLRI Jamshedpur', 'Bank Manager', 'Private', 'Eastern Bank', '18-25 LPA', 70, 'Widowed', 'Hindu', 'Khandelwal', 'Hindi', 'Vegetarian', { skin: 2, hair: 'side', hairColor: 4, beard: 'full' }],
-  ['Karan Maheshwari', 'male', 24, 'Chennai', 'B.Des', 'SRM University', 'Designer', 'Private', 'Studio Orbit', '5-8 LPA', 69, 'Never married', 'Hindu', 'Maheshwari', 'Hindi', 'Eggetarian', { skin: 3, hair: 'curly', hairColor: 0, glasses: true }]
+  ['Priya Wadhwani', 'female', 26, 'Jaipur', 'MBA', 'IIM Udaipur', 'Marketing Manager', 'Private', 'BrightLeaf Foods', '8-12 LPA', 64, 'Never Married', 'Hindu', 'Sindhi', 'Sindhi', 'Vegetarian', { skin: 1, hair: 'long', hairColor: 1 }],
+  ['Ananya Keswani', 'female', 27, 'Ahmedabad', 'M.Sc', 'Gujarat University', 'College Lecturer', 'Private', 'City Arts College', '5-8 LPA', 63, 'Never Married', 'Hindu', 'Sindhi', 'Sindhi', 'Vegetarian', { skin: 2, hair: 'bun', hairColor: 0 }],
+  ['Diya Motwani', 'female', 25, 'Mumbai', 'B.Des', 'NID Ahmedabad', 'Designer', 'Private', 'Studio Kalpana', '5-8 LPA', 65, 'Never Married', 'Hindu', 'Sindhi', 'Sindhi', 'Vegetarian', { skin: 0, hair: 'bob', hairColor: 2 }],
+  ['Ishita Asrani', 'female', 24, 'New Delhi', 'B.Com', 'Delhi University', 'Accounts Executive', 'Private', 'Nova Traders', '3-5 LPA', 62, 'Never Married', 'Hindu', 'Sindhi', 'Hindi', 'Vegetarian', { skin: 1, hair: 'braid', hairColor: 0 }],
+  ['Saanvi Vaswani', 'female', 29, 'Pune', 'MBBS', 'BJ Medical College', 'Doctor', 'Private', 'Sahyadri Hospital', '18-25 LPA', 63, 'Never Married', 'Hindu', 'Sindhi', 'Sindhi', 'Eggetarian', { skin: 2, hair: 'long', hairColor: 1, glasses: true }],
+  ['Kavya Sachdev', 'female', 28, 'Indore', 'CA', 'ICAI', 'Chartered Accountant', 'Self-employed', 'Maheshwari and Co.', '12-18 LPA', 64, 'Never Married', 'Hindu', 'Sindhi', 'Sindhi', 'Vegetarian', { skin: 0, hair: 'bob', hairColor: 0 }],
+  ['Myra Makhija', 'female', 23, 'Bengaluru', 'B.Tech', 'RV College', 'Software Engineer', 'Private', 'CloudNine Tech', '8-12 LPA', 65, 'Never Married', 'Hindu', 'Sindhi', 'Sindhi', 'Vegetarian', { skin: 1, hair: 'long', hairColor: 2 }],
+  ['Tanvi Chhabria', 'female', 31, 'Jaipur', 'M.Ed', 'Rajasthan University', 'School Teacher', 'Government', 'Govt. Girls School', '5-8 LPA', 62, 'Divorced', 'Hindu', 'Sindhi', 'Hindi', 'Vegetarian', { skin: 2, hair: 'bun', hairColor: 1 }],
+  ['Riya Khubchandani', 'female', 22, 'Chandigarh', 'B.Des', 'Chitkara University', 'Designer', 'Private', 'Pixel Loom', '3-5 LPA', 64, 'Never Married', 'Hindu', 'Sindhi', 'Sindhi', 'Eggetarian', { skin: 0, hair: 'braid', hairColor: 2 }],
+  ['Neha Kewalramani', 'female', 33, 'Hyderabad', 'MBA', 'ISB Hyderabad', 'Bank Manager', 'Private', 'Deccan Bank', '18-25 LPA', 63, 'Divorced', 'Hindu', 'Sindhi', 'Sindhi', 'Vegetarian', { skin: 1, hair: 'bob', hairColor: 4, glasses: true }],
+  ['Aarav Israni', 'male', 29, 'Pune', 'B.Tech', 'COEP Pune', 'Software Engineer', 'Private', 'Infrabyte', '12-18 LPA', 70, 'Never Married', 'Hindu', 'Sindhi', 'Sindhi', 'Vegetarian', { skin: 1, hair: 'short', hairColor: 0 }],
+  ['Kabir Harjani', 'male', 31, 'Indore', 'CA', 'ICAI', 'Chartered Accountant', 'Self-employed', 'Joshi Associates', '18-25 LPA', 68, 'Never Married', 'Hindu', 'Sindhi', 'Hindi', 'Vegetarian', { skin: 2, hair: 'side', hairColor: 1, glasses: true }],
+  ['Vihaan Lakhiani', 'male', 33, 'New Delhi', 'MBBS', 'AIIMS Delhi', 'Doctor', 'Private', 'Capital Care Hospital', '25-35 LPA', 71, 'Divorced', 'Hindu', 'Sindhi', 'Sindhi', 'Non-vegetarian', { skin: 1, hair: 'short', hairColor: 4, beard: 'stubble' }],
+  ['Reyansh Balani', 'male', 28, 'Mumbai', 'MBA', 'NMIMS', 'Business Owner', 'Business', 'Bansal Exports', '18-25 LPA', 69, 'Never Married', 'Hindu', 'Sindhi', 'Sindhi', 'Vegetarian', { skin: 0, hair: 'curly', hairColor: 0 }],
+  ['Arjun Daswani', 'male', 27, 'Ahmedabad', 'B.E.', 'LD Engineering College', 'Civil Engineer', 'Government', 'State PWD', '8-12 LPA', 67, 'Never Married', 'Hindu', 'Sindhi', 'Sindhi', 'Vegetarian', { skin: 2, hair: 'side', hairColor: 2 }],
+  ['Rohan Bhatia', 'male', 35, 'Bengaluru', 'M.Tech', 'IIT Madras', 'Project Manager', 'Private', 'Vertex Systems', '25-35 LPA', 72, 'Divorced', 'Hindu', 'Sindhi', 'Hindi', 'Vegetarian', { skin: 1, hair: 'short', hairColor: 4, beard: 'full', glasses: true }],
+  ['Yash Ahuja', 'male', 30, 'Jaipur', 'B.Com', 'Rajasthan University', 'Business Owner', 'Business', 'Kothari Jewels', 'Above 35 LPA', 69, 'Never Married', 'Hindu', 'Sindhi', 'Sindhi', 'Vegetarian', { skin: 0, hair: 'curly', hairColor: 1, beard: 'stubble' }],
+  ['Advait Rohra', 'male', 26, 'Nagpur', 'B.Pharm', 'Nagpur University', 'Government Officer', 'Government', 'Health Department', '5-8 LPA', 68, 'Never Married', 'Hindu', 'Sindhi', 'Sindhi', 'Vegetarian', { skin: 3, hair: 'short', hairColor: 0 }],
+  ['Dhruv Punjabi', 'male', 36, 'Kolkata', 'MBA', 'XLRI Jamshedpur', 'Bank Manager', 'Private', 'Eastern Bank', '18-25 LPA', 70, 'Widowed', 'Hindu', 'Sindhi', 'Sindhi', 'Vegetarian', { skin: 2, hair: 'side', hairColor: 4, beard: 'full' }],
+  ['Karan Nankani', 'male', 24, 'Chennai', 'B.Des', 'SRM University', 'Designer', 'Private', 'Studio Orbit', '5-8 LPA', 69, 'Never Married', 'Hindu', 'Sindhi', 'Hindi', 'Eggetarian', { skin: 3, hair: 'curly', hairColor: 0, glasses: true }]
 ];
 
 var COMPAT = [94, 91, 88, 86, 84, 92, 82, 79, 77, 74, 90, 87, 83, 89, 81, 76, 85, 78, 73, 80];
@@ -269,8 +259,7 @@ function buildProfile(row, i) {
     id: 'p' + (i + 1),
     profileCode: 'SV' + (100200 + i * 37),
     name: row[0], firstName: firstName, gender: row[1], age: row[2], heightIn: row[10], maritalStatus: row[11],
-    religion: row[12], community: row[13], subCommunity: OPTIONS.subCommunities[i % 7],
-    gotra: OPTIONS.gotras[i % 10], motherTongue: row[14],
+    religion: row[12], community: 'Sindhi', motherTongue: row[14],
     country: 'India', state: state, city: row[3], residency: 'Citizen', livingWithFamily: i % 3 !== 0,
     education: row[4], college: row[5], fieldOfStudy: OPTIONS.fields[i % OPTIONS.fields.length],
     employment: row[7], profession: row[6], company: row[8], income: row[9],
@@ -285,7 +274,7 @@ function buildProfile(row, i) {
     partnerPrefs: {
       ageMin: female ? row[2] : Math.max(22, row[2] - 5), ageMax: female ? row[2] + 6 : row[2] + 2,
       heightMin: female ? 64 : 58, heightMax: female ? 74 : 68,
-      maritalStatus: ['Never married'], religion: row[12], community: 'Open to all',
+      maritalStatus: ['Never Married'], religion: row[12], motherTongue: i % 3 === 0 ? 'Sindhi' : 'Open to all',
       education: ['Graduate or above'], profession: 'Open to all', income: 'Open to all',
       location: 'Open to all', diet: i % 2 ? 'Open to all' : row[15], manglik: 'Open to all'
     },
@@ -310,7 +299,7 @@ function blankPrefs() {
 function blankProfile() {
   return {
     profileFor: '', gender: '', firstName: '', lastName: '', dobDay: '', dobMonth: '', dobYear: '', maritalStatus: '', heightIn: 68,
-    religion: '', community: '', subCommunity: '', gotra: '', motherTongue: '',
+    religion: '', community: 'Sindhi', motherTongue: '',
     country: 'India', state: '', city: '', residency: '', livingWithFamily: '',
     education: '', college: '', fieldOfStudy: '',
     employment: '', profession: '', company: '', income: '',
@@ -325,9 +314,9 @@ function sampleProfile() {
   var p = blankProfile();
   var set = makePhotoSet({ gender: 'male', skin: 1, hair: 'short', hairColor: 0 }, 3);
   Object.assign(p, {
-    profileFor: 'Myself', gender: 'male', firstName: 'Rahul', lastName: 'Sharma', dobDay: '15', dobMonth: 'March', dobYear: '1998',
-    maritalStatus: 'Never married', heightIn: 69,
-    religion: 'Hindu', community: 'Agarwal', subCommunity: 'Goyal', gotra: 'Garg', motherTongue: 'Hindi',
+    profileFor: 'Myself', gender: 'male', firstName: 'Rahul', lastName: 'Lalwani', dobDay: '15', dobMonth: 'March', dobYear: '1998',
+    maritalStatus: 'Never Married', heightIn: 69,
+    religion: 'Hindu', community: 'Sindhi', motherTongue: 'Sindhi',
     country: 'India', state: 'Maharashtra', city: 'Pune', residency: 'Citizen', livingWithFamily: 'Yes',
     education: 'B.Tech', college: 'COEP Pune', fieldOfStudy: 'Computer Science',
     employment: 'Private', profession: 'Software Engineer', company: 'Infrabyte Technologies', income: '12-18 LPA',
@@ -336,12 +325,12 @@ function sampleProfile() {
     fatherOcc: 'Business', motherOcc: 'Homemaker', brothers: 0, sisters: 1, familyType: 'Nuclear', familyValues: 'Moderate',
     familyIncome: '10-20 LPA', nativePlace: 'Jaipur',
     about: 'I am a software engineer based in Pune. I value family, honesty and a simple life. I enjoy cricket, travelling and music. I am looking for a kind, educated and understanding partner to build a happy home together.',
-    photos: [set[0], set[1], set[2]], photoPrivacy: 'approved', biodataFile: 'biodata_rahul_sharma.pdf', idType: 'Aadhaar', idFile: 'aadhaar_front.jpg'
+    photos: [set[0], set[1], set[2]], photoPrivacy: 'approved', biodataFile: 'biodata_rahul_lalwani.pdf', idType: 'Aadhaar', idFile: 'aadhaar_front.jpg'
   });
   p.prefs = {
     ageMin: 23, ageMax: 28, heightMin: 60, heightMax: 68,
     open: { marital: false, religion: false, education: true, profession: true, income: true, location: false, diet: true, manglik: true },
-    marital: ['Never married'], religion: ['Hindu', 'Jain'], education: [], profession: [], income: [], location: ['Pune', 'Mumbai', 'Jaipur'], diet: [], manglik: []
+    marital: ['Never Married'], religion: ['Hindu'], education: [], profession: [], income: [], location: ['Pune', 'Mumbai', 'Jaipur'], diet: [], manglik: []
   };
   return p;
 }
@@ -414,9 +403,9 @@ var CHATS = [
 var QUICK_REPLIES = ['Hello', 'Interested, please share family details', 'Thank you', 'Can we talk this weekend?'];
 
 var STORIES = [
-  { id: 's1', names: 'Mohit and Shreya', place: 'Jaipur', year: '2025', text: 'We found each other through our community and our families connected instantly. We were married within six months.', art: [{ gender: 'male', skin: 1, hair: 'short' }, { gender: 'female', skin: 1, hair: 'long' }] },
-  { id: 's2', names: 'Nikhil and Pooja', place: 'Indore', year: '2025', text: 'A simple interest and a few honest conversations. Both families met and everything felt right.', art: [{ gender: 'male', skin: 2, hair: 'side' }, { gender: 'female', skin: 2, hair: 'bun' }] },
-  { id: 's3', names: 'Siddharth and Aisha', place: 'Pune', year: '2026', text: 'We were looking for someone who shared our values. Samaj Vivah made it easy and respectful.', art: [{ gender: 'male', skin: 0, hair: 'curly' }, { gender: 'female', skin: 0, hair: 'bob' }] }
+  { id: 's1', names: 'Mohit Lalwani and Shreya Advani', place: 'Jaipur', year: '2025', text: 'We found each other through the Sindhi community and our families connected instantly. We were married within six months.', art: [{ gender: 'male', skin: 1, hair: 'short' }, { gender: 'female', skin: 1, hair: 'long' }] },
+  { id: 's2', names: 'Nikhil Mirchandani and Pooja Bhojwani', place: 'Indore', year: '2025', text: 'A simple interest and a few honest conversations. Both families met and everything felt right.', art: [{ gender: 'male', skin: 2, hair: 'side' }, { gender: 'female', skin: 2, hair: 'bun' }] },
+  { id: 's3', names: 'Siddharth Daryani and Aisha Kriplani', place: 'Pune', year: '2026', text: 'We were looking for someone who shared our values. Samaj Vivah made it easy and respectful.', art: [{ gender: 'male', skin: 0, hair: 'curly' }, { gender: 'female', skin: 0, hair: 'bob' }] }
 ].map(function (story, i) {
   story.photos = story.art.map(function (a, j) {
     return makeAvatar({

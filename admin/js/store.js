@@ -27,18 +27,18 @@ function seedIfEmpty() {
   try {
     if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
       const initialUsers = [
-        { id: 'usr_1', name: 'Rajesh Sharma', phone: '9000000001', city: 'Mumbai', relation: 'self', status: 'pending', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 1).toISOString() },
-        { id: 'usr_2', name: 'Sunita Verma', phone: '9000000002', city: 'Delhi', relation: 'parent', status: 'pending', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 2).toISOString() },
-        { id: 'usr_3', name: 'Amit Gupta', phone: '9000000003', city: 'Pune', relation: 'self', status: 'pending', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 3).toISOString() },
-        { id: 'usr_4', name: 'Pooja Iyer', phone: '9000000004', city: 'Bengaluru', relation: 'sibling', status: 'pending', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 4).toISOString() },
-        { id: 'usr_5', name: 'Venkatesh Kulkarni', phone: '9000000005', city: 'Hyderabad', relation: 'relative', status: 'approved', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 10).toISOString() },
-        { id: 'usr_6', name: 'Meena Patel', phone: '9000000006', city: 'Ahmedabad', relation: 'parent', status: 'approved', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 12).toISOString() },
-        { id: 'usr_7', name: 'Vikram Mehta', phone: '9000000007', city: 'Jaipur', relation: 'self', status: 'approved', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 15).toISOString() },
-        { id: 'usr_8', name: 'Kavita Joshi', phone: '9000000008', city: 'Nagpur', relation: 'parent', status: 'approved', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 18).toISOString() },
-        { id: 'usr_9', name: 'Rohan Deshmukh', phone: '9000000009', city: 'Nashik', relation: 'self', status: 'rejected', rejectReason: 'Incomplete contact details provided', createdAt: new Date(Date.now() - 86400000 * 20).toISOString() },
-        { id: 'usr_10', name: 'Sanjay Trivedi', phone: '9000000010', city: 'Surat', relation: 'relative', status: 'rejected', rejectReason: 'Outside community verification scope', createdAt: new Date(Date.now() - 86400000 * 22).toISOString() },
-        { id: 'usr_11', name: 'Dinesh Agarwal', phone: '9000000011', city: 'Indore', relation: 'parent', status: 'blocked', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 30).toISOString() },
-        { id: 'usr_12', name: 'Neha Saxena', phone: '9000000012', city: 'Lucknow', relation: 'self', status: 'blocked', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 35).toISOString() }
+        { id: 'usr_1', name: 'Rajesh Advani', phone: '9000000001', city: 'Mumbai', relation: 'self', status: 'pending', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 1).toISOString() },
+        { id: 'usr_2', name: 'Sunita Chandiramani', phone: '9000000002', city: 'Delhi', relation: 'parent', status: 'pending', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 2).toISOString() },
+        { id: 'usr_3', name: 'Amit Bhojwani', phone: '9000000003', city: 'Pune', relation: 'self', status: 'pending', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 3).toISOString() },
+        { id: 'usr_4', name: 'Pooja Mirchandani', phone: '9000000004', city: 'Bengaluru', relation: 'sibling', status: 'pending', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 4).toISOString() },
+        { id: 'usr_5', name: 'Haresh Daryani', phone: '9000000005', city: 'Hyderabad', relation: 'relative', status: 'approved', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 10).toISOString() },
+        { id: 'usr_6', name: 'Meena Kriplani', phone: '9000000006', city: 'Ahmedabad', relation: 'parent', status: 'approved', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 12).toISOString() },
+        { id: 'usr_7', name: 'Vikram Thadani', phone: '9000000007', city: 'Jaipur', relation: 'self', status: 'approved', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 15).toISOString() },
+        { id: 'usr_8', name: 'Kavita Ramchandani', phone: '9000000008', city: 'Nagpur', relation: 'parent', status: 'approved', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 18).toISOString() },
+        { id: 'usr_9', name: 'Rohan Hotchandani', phone: '9000000009', city: 'Nashik', relation: 'self', status: 'rejected', rejectReason: 'Incomplete contact details provided', createdAt: new Date(Date.now() - 86400000 * 20).toISOString() },
+        { id: 'usr_10', name: 'Sanjay Jagtiani', phone: '9000000010', city: 'Surat', relation: 'relative', status: 'rejected', rejectReason: 'Outside community verification scope', createdAt: new Date(Date.now() - 86400000 * 22).toISOString() },
+        { id: 'usr_11', name: 'Dinesh Gidwani', phone: '9000000011', city: 'Indore', relation: 'parent', status: 'blocked', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 30).toISOString() },
+        { id: 'usr_12', name: 'Neha Tolani', phone: '9000000012', city: 'Lucknow', relation: 'self', status: 'blocked', rejectReason: '', createdAt: new Date(Date.now() - 86400000 * 35).toISOString() }
       ];
       localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(initialUsers));
     }
@@ -47,7 +47,7 @@ function seedIfEmpty() {
       const initialProfiles = [
         {
           id: 'prf_101',
-          name: 'Aarav Sharma',
+          name: 'Aarav Advani',
           gender: 'male',
           age: 28,
           height: `5'10"`,
@@ -56,16 +56,16 @@ function seedIfEmpty() {
           profession: 'Senior Software Engineer',
           income: '24-30 LPA',
           city: 'Mumbai',
-          religionDetails: 'Brahmin - Kaushik Gotra',
-          fatherName: 'Ramesh Sharma',
+          religionDetails: 'Hindu - Sindhi',
+          fatherName: 'Ramesh Advani',
           fatherOccupation: 'Retired Bank Manager',
-          motherName: 'Sunita Sharma',
+          motherName: 'Sunita Advani',
           siblings: '1 Sister (Married)',
           familyType: 'Nuclear',
           expectations: 'Looking for an educated, family-oriented partner working in IT/Healthcare.',
           contactNumber: '9876543210',
           photos: [
-            generateSvgAvatar('Aarav Sharma', 'male', '#7B1E2B'),
+            generateSvgAvatar('Aarav Advani', 'male', '#7B1E2B'),
             generateSvgAvatar('Aarav Casual', 'male', '#5A1220')
           ],
           biodataFile: { name: 'Aarav_Biodata.pdf', data: 'data:application/pdf;base64,JVBERi0xLjQK' },
@@ -75,7 +75,7 @@ function seedIfEmpty() {
         },
         {
           id: 'prf_102',
-          name: 'Ananya Verma',
+          name: 'Ananya Lalwani',
           gender: 'female',
           age: 26,
           height: `5'5"`,
@@ -84,16 +84,16 @@ function seedIfEmpty() {
           profession: 'Financial Analyst',
           income: '15-18 LPA',
           city: 'Delhi',
-          religionDetails: 'Brahmin - Vashishtha Gotra',
-          fatherName: 'Suresh Verma',
+          religionDetails: 'Hindu - Sindhi',
+          fatherName: 'Suresh Lalwani',
           fatherOccupation: 'Government Officer',
-          motherName: 'Radha Verma',
+          motherName: 'Radha Lalwani',
           siblings: '1 Brother (Studying)',
           familyType: 'Joint',
           expectations: 'Well-settled professional with good family values.',
           contactNumber: '9876543211',
           photos: [
-            generateSvgAvatar('Ananya Verma', 'female', '#C9A24D', '#2E1F1A')
+            generateSvgAvatar('Ananya Lalwani', 'female', '#C9A24D', '#2E1F1A')
           ],
           biodataFile: null,
           status: 'published',
@@ -102,7 +102,7 @@ function seedIfEmpty() {
         },
         {
           id: 'prf_103',
-          name: 'Rohan Iyer',
+          name: 'Rohan Chandiramani',
           gender: 'male',
           age: 30,
           height: `6'0"`,
@@ -111,16 +111,16 @@ function seedIfEmpty() {
           profession: 'Data Architect',
           income: '35+ LPA',
           city: 'Bengaluru',
-          religionDetails: 'Brahmin - Bharadwaj Gotra',
-          fatherName: 'Subramanian Iyer',
+          religionDetails: 'Hindu - Sindhi',
+          fatherName: 'Subramanian Chandiramani',
           fatherOccupation: 'Professor',
-          motherName: 'Lakshmi Iyer',
+          motherName: 'Lakshmi Chandiramani',
           siblings: 'None',
           familyType: 'Nuclear',
           expectations: 'Independent and caring individual living in Bengaluru/Abroad.',
           contactNumber: '9876543212',
           photos: [
-            generateSvgAvatar('Rohan Iyer', 'male', '#2E7D4F')
+            generateSvgAvatar('Rohan Chandiramani', 'male', '#2E7D4F')
           ],
           biodataFile: null,
           status: 'published',
@@ -129,7 +129,7 @@ function seedIfEmpty() {
         },
         {
           id: 'prf_104',
-          name: 'Priya Kulkarni',
+          name: 'Priya Mirchandani',
           gender: 'female',
           age: 27,
           height: `5'4"`,
@@ -138,16 +138,16 @@ function seedIfEmpty() {
           profession: 'Architect',
           income: '12-15 LPA',
           city: 'Pune',
-          religionDetails: 'Brahmin - Kashyap Gotra',
-          fatherName: 'Anant Kulkarni',
+          religionDetails: 'Hindu - Sindhi',
+          fatherName: 'Anant Mirchandani',
           fatherOccupation: 'Civil Engineer',
-          motherName: 'Aarti Kulkarni',
+          motherName: 'Aarti Mirchandani',
           siblings: '1 Sister (Unmarried)',
           familyType: 'Nuclear',
           expectations: 'Creative, open-minded professional in Maharashtra.',
           contactNumber: '9876543213',
           photos: [
-            generateSvgAvatar('Priya Kulkarni', 'female', '#7B1E2B')
+            generateSvgAvatar('Priya Mirchandani', 'female', '#7B1E2B')
           ],
           biodataFile: null,
           status: 'published',
@@ -156,7 +156,7 @@ function seedIfEmpty() {
         },
         {
           id: 'prf_105',
-          name: 'Aditya Mehta',
+          name: 'Aditya Bhojwani',
           gender: 'male',
           age: 29,
           height: `5'11"`,
@@ -165,16 +165,16 @@ function seedIfEmpty() {
           profession: 'Senior Audit Manager',
           income: '25-30 LPA',
           city: 'Ahmedabad',
-          religionDetails: 'Brahmin - Garg Gotra',
-          fatherName: 'Mahesh Mehta',
+          religionDetails: 'Hindu - Sindhi',
+          fatherName: 'Mahesh Bhojwani',
           fatherOccupation: 'Business Owner',
-          motherName: 'Rekha Mehta',
+          motherName: 'Rekha Bhojwani',
           siblings: '1 Brother (Married)',
           familyType: 'Joint',
           expectations: 'Educated partner with traditional yet modern outlook.',
           contactNumber: '9876543214',
           photos: [
-            generateSvgAvatar('Aditya Mehta', 'male', '#1976D2')
+            generateSvgAvatar('Aditya Bhojwani', 'male', '#1976D2')
           ],
           biodataFile: null,
           status: 'published',
@@ -183,7 +183,7 @@ function seedIfEmpty() {
         },
         {
           id: 'prf_106',
-          name: 'Sneha Patel',
+          name: 'Sneha Melwani',
           gender: 'female',
           age: 25,
           height: `5'3"`,
@@ -192,16 +192,16 @@ function seedIfEmpty() {
           profession: 'Resident Doctor',
           income: '15-20 LPA',
           city: 'Surat',
-          religionDetails: 'Brahmin - Shandilya Gotra',
-          fatherName: 'Jitin Patel',
+          religionDetails: 'Hindu - Sindhi',
+          fatherName: 'Jitin Melwani',
           fatherOccupation: 'Doctor',
-          motherName: 'Nisha Patel',
+          motherName: 'Nisha Melwani',
           siblings: 'None',
           familyType: 'Nuclear',
           expectations: 'Medical professional or well-educated engineer/CA.',
           contactNumber: '9876543215',
           photos: [
-            generateSvgAvatar('Sneha Patel', 'female', '#B7791F')
+            generateSvgAvatar('Sneha Melwani', 'female', '#B7791F')
           ],
           biodataFile: null,
           status: 'published',
@@ -210,7 +210,7 @@ function seedIfEmpty() {
         },
         {
           id: 'prf_107',
-          name: 'Vikramaditya Joshi',
+          name: 'Vikram Daryani',
           gender: 'male',
           age: 31,
           height: `6'1"`,
@@ -219,16 +219,16 @@ function seedIfEmpty() {
           profession: 'Product Manager',
           income: '40+ LPA',
           city: 'Hyderabad',
-          religionDetails: 'Brahmin - Atri Gotra',
-          fatherName: 'Prakash Joshi',
+          religionDetails: 'Hindu - Sindhi',
+          fatherName: 'Prakash Daryani',
           fatherOccupation: 'Advocate',
-          motherName: 'Shobha Joshi',
+          motherName: 'Shobha Daryani',
           siblings: '1 Sister (Married)',
           familyType: 'Nuclear',
           expectations: 'Career-oriented, cultured partner.',
           contactNumber: '9876543216',
           photos: [
-            generateSvgAvatar('Vikramaditya', 'male', '#5A1220')
+            generateSvgAvatar('Vikram', 'male', '#5A1220')
           ],
           biodataFile: null,
           status: 'published',
@@ -237,7 +237,7 @@ function seedIfEmpty() {
         },
         {
           id: 'prf_108',
-          name: 'Divya Deshmukh',
+          name: 'Divya Kriplani',
           gender: 'female',
           age: 28,
           height: `5'6"`,
@@ -246,16 +246,16 @@ function seedIfEmpty() {
           profession: 'Research Scientist',
           income: '14-16 LPA',
           city: 'Nagpur',
-          religionDetails: 'Brahmin - Vatsa Gotra',
-          fatherName: 'Vijay Deshmukh',
+          religionDetails: 'Hindu - Sindhi',
+          fatherName: 'Vijay Kriplani',
           fatherOccupation: 'Bank Officer',
-          motherName: 'Usha Deshmukh',
+          motherName: 'Usha Kriplani',
           siblings: '1 Brother (Unmarried)',
           familyType: 'Nuclear',
           expectations: 'Respectful, educated groom from metro cities.',
           contactNumber: '9876543217',
           photos: [
-            generateSvgAvatar('Divya Deshmukh', 'female', '#7B1E2B')
+            generateSvgAvatar('Divya Kriplani', 'female', '#7B1E2B')
           ],
           biodataFile: null,
           status: 'published',
@@ -264,7 +264,7 @@ function seedIfEmpty() {
         },
         {
           id: 'prf_109',
-          name: 'Karan Trivedi',
+          name: 'Karan Thadani',
           gender: 'male',
           age: 27,
           height: `5'9"`,
@@ -273,16 +273,16 @@ function seedIfEmpty() {
           profession: 'DevOps Engineer',
           income: '18-22 LPA',
           city: 'Indore',
-          religionDetails: 'Brahmin - Parashar Gotra',
-          fatherName: 'Gopal Trivedi',
+          religionDetails: 'Hindu - Sindhi',
+          fatherName: 'Gopal Thadani',
           fatherOccupation: 'Government Servant',
-          motherName: 'Anita Trivedi',
+          motherName: 'Anita Thadani',
           siblings: '1 Brother',
           familyType: 'Joint',
           expectations: 'Family loving partner willing to relocate if needed.',
           contactNumber: '9876543218',
           photos: [
-            generateSvgAvatar('Karan Trivedi', 'male', '#C9A24D', '#2E1F1A')
+            generateSvgAvatar('Karan Thadani', 'male', '#C9A24D', '#2E1F1A')
           ],
           biodataFile: null,
           status: 'published',
@@ -291,7 +291,7 @@ function seedIfEmpty() {
         },
         {
           id: 'prf_110',
-          name: 'Pooja Agarwal',
+          name: 'Pooja Ramchandani',
           gender: 'female',
           age: 29,
           height: `5'4"`,
@@ -300,16 +300,16 @@ function seedIfEmpty() {
           profession: 'Legal Counsel',
           income: '20-25 LPA',
           city: 'Mumbai',
-          religionDetails: 'Brahmin - Gautam Gotra',
-          fatherName: 'Rajendra Agarwal',
+          religionDetails: 'Hindu - Sindhi',
+          fatherName: 'Rajendra Ramchandani',
           fatherOccupation: 'Industrialist',
-          motherName: 'Kiran Agarwal',
+          motherName: 'Kiran Ramchandani',
           siblings: '1 Sister',
           familyType: 'Nuclear',
           expectations: 'Groom based in Mumbai with strong professional background.',
           contactNumber: '9876543219',
           photos: [
-            generateSvgAvatar('Pooja Agarwal', 'female', '#2E7D4F')
+            generateSvgAvatar('Pooja Ramchandani', 'female', '#2E7D4F')
           ],
           biodataFile: null,
           status: 'published',
@@ -318,7 +318,7 @@ function seedIfEmpty() {
         },
         {
           id: 'prf_111',
-          name: 'Siddharth Saxena',
+          name: 'Siddharth Hotchandani',
           gender: 'male',
           age: 32,
           height: `5'11"`,
@@ -327,16 +327,16 @@ function seedIfEmpty() {
           profession: 'Marketing Director',
           income: '30-35 LPA',
           city: 'Delhi',
-          religionDetails: 'Brahmin - Agastya Gotra',
-          fatherName: 'Harish Saxena',
+          religionDetails: 'Hindu - Sindhi',
+          fatherName: 'Harish Hotchandani',
           fatherOccupation: 'Retired IAS',
-          motherName: 'Saroj Saxena',
+          motherName: 'Saroj Hotchandani',
           siblings: '1 Sister (Married)',
           familyType: 'Nuclear',
           expectations: 'Understanding and mature life partner.',
           contactNumber: '9876543220',
           photos: [
-            generateSvgAvatar('Siddharth Saxena', 'male', '#1976D2')
+            generateSvgAvatar('Siddharth Hotchandani', 'male', '#1976D2')
           ],
           biodataFile: null,
           status: 'published',
@@ -345,7 +345,7 @@ function seedIfEmpty() {
         },
         {
           id: 'prf_112',
-          name: 'Meenal Gupta',
+          name: 'Meenal Jagtiani',
           gender: 'female',
           age: 30,
           height: `5'5"`,
@@ -354,16 +354,16 @@ function seedIfEmpty() {
           profession: 'Assistant Professor',
           income: '12-14 LPA',
           city: 'Jaipur',
-          religionDetails: 'Brahmin - Kaushik Gotra',
-          fatherName: 'Vinod Gupta',
+          religionDetails: 'Hindu - Sindhi',
+          fatherName: 'Vinod Jagtiani',
           fatherOccupation: 'Principal',
-          motherName: 'Manju Gupta',
+          motherName: 'Manju Jagtiani',
           siblings: '1 Brother',
           familyType: 'Joint',
           expectations: 'Academician or IT professional with intellectual interests.',
           contactNumber: '9876543221',
           photos: [
-            generateSvgAvatar('Meenal Gupta', 'female', '#5A1220')
+            generateSvgAvatar('Meenal Jagtiani', 'female', '#5A1220')
           ],
           biodataFile: null,
           status: 'published',
@@ -372,7 +372,7 @@ function seedIfEmpty() {
         },
         {
           id: 'prf_113',
-          name: 'Varun Sharma',
+          name: 'Varun Gidwani',
           gender: 'male',
           age: 26,
           height: `5'8"`,
@@ -381,16 +381,16 @@ function seedIfEmpty() {
           profession: 'UI/UX Designer',
           income: '14-16 LPA',
           city: 'Pune',
-          religionDetails: 'Brahmin - Shandilya Gotra',
-          fatherName: 'Pradeep Sharma',
+          religionDetails: 'Hindu - Sindhi',
+          fatherName: 'Pradeep Gidwani',
           fatherOccupation: 'Architect',
-          motherName: 'Suman Sharma',
+          motherName: 'Suman Gidwani',
           siblings: 'None',
           familyType: 'Nuclear',
           expectations: 'Creative, cheerful person living in Maharashtra.',
           contactNumber: '9876543222',
           photos: [
-            generateSvgAvatar('Varun Sharma', 'male', '#7B1E2B')
+            generateSvgAvatar('Varun Gidwani', 'male', '#7B1E2B')
           ],
           biodataFile: null,
           status: 'hidden',
@@ -399,7 +399,7 @@ function seedIfEmpty() {
         },
         {
           id: 'prf_114',
-          name: 'Ritu Kulkarni',
+          name: 'Ritu Tolani',
           gender: 'female',
           age: 27,
           height: `5'4"`,
@@ -408,16 +408,16 @@ function seedIfEmpty() {
           profession: 'Accountant',
           income: '8-10 LPA',
           city: 'Nashik',
-          religionDetails: 'Brahmin - Vashishtha Gotra',
-          fatherName: 'Bhaskar Kulkarni',
+          religionDetails: 'Hindu - Sindhi',
+          fatherName: 'Bhaskar Tolani',
           fatherOccupation: 'Businessman',
-          motherName: 'Lata Kulkarni',
+          motherName: 'Lata Tolani',
           siblings: '1 Sister',
           familyType: 'Joint',
           expectations: 'Family oriented groom from Maharashtra.',
           contactNumber: '9876543223',
           photos: [
-            generateSvgAvatar('Ritu Kulkarni', 'female', '#B7791F')
+            generateSvgAvatar('Ritu Tolani', 'female', '#B7791F')
           ],
           biodataFile: null,
           status: 'hidden',
@@ -426,7 +426,7 @@ function seedIfEmpty() {
         },
         {
           id: 'prf_115',
-          name: 'Gaurav Deshpande',
+          name: 'Gaurav Nankani',
           gender: 'male',
           age: 29,
           height: `5'10"`,
@@ -435,16 +435,16 @@ function seedIfEmpty() {
           profession: 'Automotive Design Engineer',
           income: '22-26 LPA',
           city: 'Bengaluru',
-          religionDetails: 'Brahmin - Kashyap Gotra',
-          fatherName: 'Nitin Deshpande',
+          religionDetails: 'Hindu - Sindhi',
+          fatherName: 'Nitin Nankani',
           fatherOccupation: 'Engineer',
-          motherName: 'Nalini Deshpande',
+          motherName: 'Nalini Nankani',
           siblings: '1 Sister (Married)',
           familyType: 'Nuclear',
           expectations: 'Draft profile - details being updated.',
           contactNumber: '9876543224',
           photos: [
-            generateSvgAvatar('Gaurav Deshpande', 'male', '#1976D2')
+            generateSvgAvatar('Gaurav Nankani', 'male', '#1976D2')
           ],
           biodataFile: null,
           status: 'draft',
@@ -457,14 +457,14 @@ function seedIfEmpty() {
 
     if (!localStorage.getItem(STORAGE_KEYS.ACTIVITY)) {
       const initialActivity = [
-        { id: 'act_1', action: 'approved', target: 'User: Venkatesh Kulkarni', time: new Date(Date.now() - 3600000 * 4).toISOString() },
-        { id: 'act_2', action: 'profile added', target: 'Profile: Aarav Sharma', time: new Date(Date.now() - 3600000 * 8).toISOString() },
-        { id: 'act_3', action: 'approved', target: 'User: Meena Patel', time: new Date(Date.now() - 3600000 * 18).toISOString() },
-        { id: 'act_4', action: 'rejected', target: 'User: Rohan Deshmukh', time: new Date(Date.now() - 3600000 * 26).toISOString() },
-        { id: 'act_5', action: 'hidden', target: 'Profile: Varun Sharma (Marriage fixed)', time: new Date(Date.now() - 3600000 * 40).toISOString() },
-        { id: 'act_6', action: 'blocked', target: 'User: Dinesh Agarwal', time: new Date(Date.now() - 3600000 * 50).toISOString() },
-        { id: 'act_7', action: 'profile added', target: 'Profile: Ananya Verma', time: new Date(Date.now() - 3600000 * 60).toISOString() },
-        { id: 'act_8', action: 'approved', target: 'User: Vikram Mehta', time: new Date(Date.now() - 3600000 * 72).toISOString() }
+        { id: 'act_1', action: 'approved', target: 'User: Haresh Daryani', time: new Date(Date.now() - 3600000 * 4).toISOString() },
+        { id: 'act_2', action: 'profile added', target: 'Profile: Aarav Advani', time: new Date(Date.now() - 3600000 * 8).toISOString() },
+        { id: 'act_3', action: 'approved', target: 'User: Meena Kriplani', time: new Date(Date.now() - 3600000 * 18).toISOString() },
+        { id: 'act_4', action: 'rejected', target: 'User: Rohan Hotchandani', time: new Date(Date.now() - 3600000 * 26).toISOString() },
+        { id: 'act_5', action: 'hidden', target: 'Profile: Varun Gidwani (Marriage fixed)', time: new Date(Date.now() - 3600000 * 40).toISOString() },
+        { id: 'act_6', action: 'blocked', target: 'User: Dinesh Gidwani', time: new Date(Date.now() - 3600000 * 50).toISOString() },
+        { id: 'act_7', action: 'profile added', target: 'Profile: Ananya Lalwani', time: new Date(Date.now() - 3600000 * 60).toISOString() },
+        { id: 'act_8', action: 'approved', target: 'User: Vikram Thadani', time: new Date(Date.now() - 3600000 * 72).toISOString() }
       ];
       localStorage.setItem(STORAGE_KEYS.ACTIVITY, JSON.stringify(initialActivity));
     }

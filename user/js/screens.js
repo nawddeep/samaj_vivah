@@ -4,14 +4,14 @@
    PART 1A: SCREEN SCAFFOLD AND FORM COMPONENTS
    ===================================================================== */
 
-// Screen({ back, progress: {from, to}, right, body, footer, className }) -> { el, body, mounted }
+// Screen({ back, onBack, progress: {from, to}, right, body, footer, className }) -> { el, body, mounted }
 function Screen(o) {
   var header = null;
   var fill = null;
   if (o.back || o.progress || o.right) {
     header = h('div', { class: 'screen-header' });
     if (o.back) {
-      header.appendChild(h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Go back', onClick: function () { Router.back(); } }, Icon('back')));
+      header.appendChild(h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Go back', onClick: function () { if (o.onBack) o.onBack(); else Router.back(); } }, Icon('back')));
     }
     if (o.progress) {
       fill = h('div', { class: 'progress-fill' });
@@ -570,30 +570,24 @@ registerStep('height', {
   mounted: function (content) { content._scrollToValue(); }
 });
 
-/* ---------- 11. Community details ---------- */
+/* ---------- 11. Community details (this app is only for the Sindhi community) ---------- */
 registerStep('community', {
   title: 'Community details',
-  helper: 'This helps families from the same community find each other.',
+  helper: 'Tell us about religion and language.',
   render: function (content) {
     var p = State.profile;
-    var communityField;
-    var religion = pickerField(p, 'religion', 'Religion', function () { return OPTIONS.religions; }, {
-      onChange: function () { p.community = ''; communityField.repaint(); }
-    });
-    communityField = pickerField(p, 'community', 'Community', function () { return OPTIONS.communities[p.religion] || []; }, {
-      guard: function () { return p.religion ? null : 'Please select the religion first.'; }
-    });
-    content.appendChild(religion);
-    content.appendChild(communityField);
-    content.appendChild(pickerField(p, 'subCommunity', 'Sub-community (sub-caste)', function () { return OPTIONS.subCommunities; }, { hint: 'Optional' }));
-    content.appendChild(pickerField(p, 'gotra', 'Gotra', function () { return OPTIONS.gotras; }, { hint: 'Optional' }));
+    p.community = 'Sindhi';
+    content.appendChild(h('div', { class: 'fixed-community' }, [
+      Icon('lock'),
+      h('span', { class: 'menu-text' }, [h('span', { class: 'p-active', text: 'Community' }), h('strong', { text: 'Sindhi' })])
+    ]));
+    content.appendChild(pickerField(p, 'religion', 'Religion', function () { return OPTIONS.religions; }));
     content.appendChild(pickerField(p, 'motherTongue', 'Mother tongue', function () { return OPTIONS.languages; }));
   },
   validate: function () {
     var p = State.profile;
     var errors = [];
     if (!p.religion) errors.push(['religion', 'Please select the religion.']);
-    if (!p.community) errors.push(['community', 'Please select the community.']);
     if (!p.motherTongue) errors.push(['motherTongue', 'Please select the mother tongue.']);
     return errors;
   }
@@ -975,7 +969,10 @@ Router.register('splash', function () {
   ]);
   return {
     el: el, title: 'Welcome',
-    mounted: function () { timer = setTimeout(function () { Router.replace('welcome'); }, 1500); },
+    mounted: function () {
+      var saved = Bridge.restore(); // a returning member skips the welcome slides
+      timer = setTimeout(function () { Router.replace(saved ? Router.gateName() : 'welcome'); }, 1500);
+    },
     leave: function () { clearTimeout(timer); }
   };
 });
@@ -983,7 +980,7 @@ Router.register('splash', function () {
 /* ---------- 2. Welcome slides ---------- */
 Router.register('welcome', function () {
   var slides = [
-    { icon: 'verified', a: 'users', b: 'heart', title: 'Find verified matches in your community', text: 'Every profile is checked by our team before you see it.' },
+    { icon: 'verified', a: 'users', b: 'heart', title: 'Find verified matches in the Sindhi community', text: 'Every profile is checked by our team before you see it.' },
     { icon: 'shield', a: 'lock', b: 'eye', title: 'Your privacy is protected', text: 'You choose who can see your photos and details.' },
     { icon: 'phone', a: 'check', b: 'lock', title: 'Contact only after approval', text: 'Phone numbers are shown only to approved members.' }
   ];
@@ -1099,7 +1096,7 @@ Router.register('otp', function () {
     if (code().length < 4) { showErrors(wrap, [['otp', 'Please enter the 4 digit OTP.']]); return; }
     setButtonBusy(button, 'Verifying...');
     verifyTimer = setTimeout(function () {
-      State.loggedIn = true;
+      Bridge.login(State.phone); // an existing number opens its account; a new one starts the profile
       UI.toast('Mobile number verified');
       Router.replace(Router.gateName()); // new users start the profile, returning users go to their status screen
     }, 800);
@@ -1220,7 +1217,7 @@ function reviewSections() {
       ['Date of birth', p.dobDay ? p.dobDay + ' ' + p.dobMonth + ' ' + p.dobYear + (age !== null ? ' (' + age + ' years)' : '') : 'Not added'],
       ['Marital status', show(p.maritalStatus)], ['Height', fmtHeight(p.heightIn) + ' (' + cmFromInches(p.heightIn) + ' cm)']
     ] },
-    { title: 'Community', step: 'community', rows: [['Religion', show(p.religion)], ['Community', show(p.community)], ['Sub-community', show(p.subCommunity)], ['Gotra', show(p.gotra)], ['Mother tongue', show(p.motherTongue)]] },
+    { title: 'Community', step: 'community', rows: [['Community', 'Sindhi'], ['Religion', show(p.religion)], ['Mother tongue', show(p.motherTongue)]] },
     { title: 'Location', step: 'location', rows: [['Country', show(p.country)], ['State', show(p.state)], ['City', show(p.city)], ['Residency', show(p.residency)], ['Living with family', show(p.livingWithFamily)]] },
     { title: 'Education', step: 'education', rows: [['Qualification', show(p.education)], ['College', show(p.college)], ['Field of study', show(p.fieldOfStudy)]] },
     { title: 'Work', step: 'work', rows: [['Employment', show(p.employment)], ['Profession', show(p.profession)], ['Company', show(p.company)], ['Annual income', show(p.income)]] },
@@ -1272,7 +1269,11 @@ Router.register('review', function () {
     }
     setButtonBusy(button, 'Submitting...');
     setTimeout(function () {
-      State.status = 'pending';
+      if (!Bridge.submitProfile()) {
+        resetButton(button, 'Submit for approval');
+        UI.toast('Could not save. Your browser storage is full or blocked.', 'error');
+        return;
+      }
       UI.toast('Profile submitted for approval');
       Router.replace('pending');
     }, 1000);
@@ -1295,7 +1296,8 @@ Router.register('review', function () {
    ===================================================================== */
 
 function seeking() { return State.profile.gender === 'male' ? 'female' : 'male'; }
-function oppositeProfiles() { return PROFILES.filter(function (p) { return p.gender === seeking(); }); }
+// Only profiles the admin published, of the other gender. Draft and hidden profiles never appear.
+function oppositeProfiles() { return Bridge.publishedProfiles().filter(function (p) { return p.gender === seeking() && p.userId !== State.userId; }); }
 function myName() { return (State.profile.firstName + ' ' + State.profile.lastName).trim() || 'Member'; }
 function myAge() { return calcAge(State.profile.dobDay, State.profile.dobMonth, State.profile.dobYear) || 28; }
 
@@ -1306,8 +1308,7 @@ function blankFilters() {
 }
 
 var FILTER_FIELDS = [
-  ['maritalStatus', 'Marital status'], ['religion', 'Religion'], ['community', 'Community'], ['subCommunity', 'Sub-community'],
-  ['gotra', 'Gotra'], ['motherTongue', 'Mother tongue'], ['country', 'Country'], ['state', 'State'], ['city', 'City'],
+  ['maritalStatus', 'Marital status'], ['religion', 'Religion'], ['motherTongue', 'Mother tongue'], ['country', 'Country'], ['state', 'State'], ['city', 'City'],
   ['education', 'Education'], ['profession', 'Profession'], ['income', 'Income'], ['diet', 'Diet'],
   ['drinking', 'Drinking'], ['smoking', 'Smoking'], ['manglik', 'Manglik']
 ];
@@ -1317,10 +1318,11 @@ function appState() {
   if (!State.app) {
     var o = oppositeProfiles();
     State.app = {
-      shortlist: [], viewed: [o[2].id, o[5].id, o[8].id], blocked: [], hidden: [], passed: [],
+      shortlist: Bridge.loadShortlist(State.userId).filter(function (id) { return Bridge.publishedProfile(id); }),
+      viewed: [2, 5, 8].map(function (i) { return o[i]; }).filter(Boolean).map(function (p) { return p.id; }), blocked: [], hidden: [], passed: [],
       filters: blankFilters(), search: '', sort: 'best', view: 'list', page: 1, focusSearch: false, savedSearch: false,
       notifications: NOTIFICATIONS.map(function (n) { return Object.assign({}, n); }),
-      interests: INTERESTS.map(function (i) { return { id: i.id, profileId: o[i.slot].id, dir: i.dir, status: i.status, time: i.time }; })
+      interests: INTERESTS.filter(function (i) { return o[i.slot]; }).map(function (i) { return { id: i.id, profileId: o[i.slot].id, dir: i.dir, status: i.status, time: i.time }; })
     };
   }
   return State.app;
@@ -1331,10 +1333,8 @@ function visibleProfiles() {
   return oppositeProfiles().filter(function (p) { return a.blocked.indexOf(p.id) === -1 && a.hidden.indexOf(p.id) === -1; });
 }
 
-function profileById(id) {
-  for (var i = 0; i < PROFILES.length; i++) if (PROFILES[i].id === id) return PROFILES[i];
-  return null;
-}
+// null when the admin hid or removed the profile in the meantime.
+function profileById(id) { return Bridge.publishedProfile(id); }
 
 /* ---------- Things that must stay in sync on every screen (hearts, interest buttons) ---------- */
 
@@ -1351,6 +1351,7 @@ function toggleShortlist(id) {
   var list = appState().shortlist;
   var at = list.indexOf(id);
   if (at === -1) list.unshift(id); else list.splice(at, 1);
+  Bridge.saveShortlist(State.userId, list);
   repaintBound();
   return at === -1;
 }
@@ -1464,8 +1465,8 @@ function showSupport() {
 function logout() {
   UI.confirm({ title: 'Log out?', message: 'You will need to verify your mobile number again.', confirmText: 'Log out', danger: true }).then(function (yes) {
     if (!yes) return;
-    State.loggedIn = false;
-    State.cameFromWelcome = false;
+    Bridge.logout();
+    resetState(); // everything saved lives in the shared store, so logging in again brings it back
     UI.toast('You have been logged out');
     Router.replace('phone');
   });
@@ -1544,7 +1545,12 @@ Router.register('pending', function () {
     : h('p', { class: 'muted center', text: 'Your profile is 100% complete. Great work!' });
 
   function simulate(status, route, message) {
-    return function () { State.status = status; UI.toast(message, status === 'approved' ? 'success' : 'info'); Router.replace(route); };
+    return function () { Bridge.demoSetStatus(status, REJECTION_REASON); UI.toast(message, status === 'approved' ? 'success' : 'info'); Router.replace(route); };
+  }
+  function checkStatus() {
+    Bridge.sync(); // the admin may have decided in the meantime
+    if (State.status === 'pending') { UI.toast('Still pending. We will notify you once it is reviewed.', 'info'); return; }
+    Router.replace(Router.gateName());
   }
 
   var el = Screen({
@@ -1558,9 +1564,10 @@ Router.register('pending', function () {
       tips,
       h('h3', { class: 'section-label', text: 'How others will see you' }),
       profilePreview(),
+      h('button', { type: 'button', class: 'btn btn-outline btn-block', style: 'margin-top:16px', text: 'Check status', onClick: checkStatus }),
       h('div', { class: 'demo-tools' }, [
         h('h2', { text: 'DEMO TOOLS' }),
-        h('p', { text: 'For the client demo only. These buttons will not exist in the live app.' }),
+        h('p', { text: 'For the client demo only. These buttons act like the admin and update the real admin panel. They will not exist in the live app.' }),
         h('button', { type: 'button', class: 'btn btn-primary btn-block', text: 'Simulate approval', onClick: simulate('approved', 'approved', 'Profile approved') }),
         h('button', { type: 'button', class: 'btn btn-outline btn-block', text: 'Simulate rejection', onClick: simulate('rejected', 'rejected', 'Profile rejected') }),
         h('button', { type: 'button', class: 'btn btn-outline btn-block', text: 'Simulate block', onClick: simulate('blocked', 'blocked', 'Account blocked') })
@@ -1569,7 +1576,7 @@ Router.register('pending', function () {
     ]
   });
   return { el: el.el, title: 'Pending approval', mounted: ring.start };
-}, { auth: 'login' });
+}, { auth: 'login', only: 'pending' });
 
 /* ---------- 24. Approved celebration ---------- */
 Router.register('approved', function () {
@@ -1591,14 +1598,14 @@ Router.register('approved', function () {
         statusIcon('verified', 'success pulse'),
         h('h1', { class: 'center', text: 'Congratulations!' }),
         h('p', { class: 'center', text: 'Your profile is approved.' }),
-        h('p', { class: 'muted center', text: 'You can now find matches in your community.' })
+        h('p', { class: 'muted center', text: 'You can now find matches in the Sindhi community.' })
       ])
     ],
-    footer: bigButton('Find matches', function () { Router.replace('home'); })
+    footer: bigButton('Find matches', function () { Bridge.markApprovalSeen(); Router.replace('home'); })
   });
   screen.el.appendChild(confetti);
   return { el: screen.el, title: 'Approved' };
-}, { auth: 'login' });
+}, { auth: 'login', only: 'approved' });
 
 /* ---------- 25. Rejected ---------- */
 Router.register('rejected', function () {
@@ -1609,14 +1616,14 @@ Router.register('rejected', function () {
         h('h1', { class: 'center', text: 'Profile not approved' }),
         h('p', { class: 'muted center', text: 'Our team could not approve your profile for this reason:' })
       ]),
-      h('div', { class: 'reason-box' }, [Icon('info'), h('span', { text: REJECTION_REASON })]),
+      h('div', { class: 'reason-box' }, [Icon('info'), h('span', { text: State.rejectReason || REJECTION_REASON })]),
       h('button', { type: 'button', class: 'link-btn block-link', text: 'Contact support', onClick: showSupport }),
       h('button', { type: 'button', class: 'link-btn block-link', text: 'Log out', onClick: logout })
     ],
     footer: bigButton('Edit and resubmit', function () { Router.go('review'); })
   });
   return { el: screen.el, title: 'Profile not approved' };
-}, { auth: 'login' });
+}, { auth: 'login', only: 'rejected' });
 
 /* ---------- 26. Blocked ---------- */
 Router.register('blocked', function () {
@@ -1632,7 +1639,7 @@ Router.register('blocked', function () {
     footer: bigButton('Contact support', showSupport)
   });
   return { el: screen.el, title: 'Account blocked' };
-}, { auth: 'login' });
+}, { auth: 'login', only: 'blocked' });
 
 /* =====================================================================
    PART 2C: PROFILE CARDS, NOTIFICATIONS, HOME
@@ -1673,7 +1680,7 @@ function listCard(p, o) {
   ]);
   link.addEventListener('click', function (event) { event.preventDefault(); openProfile(p.id); });
   var actions = h('div', { class: 'list-actions' }, o.actions || interestButton(p, 'btn-primary btn-small btn-block'));
-  return h('article', { class: 'card list-card' }, [link, heartButton(p), actions]);
+  return h('article', { class: 'card list-card' }, [link, o.noHeart ? null : heartButton(p), actions]);
 }
 
 /* ---------- 35. Notifications ---------- */
@@ -1765,8 +1772,10 @@ Router.register('home', function () {
   if (unreadCount()) bell.appendChild(h('span', { class: 'notif-dot', 'aria-label': unreadCount() + ' unread' }));
   var searchBtn = h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Search matches', onClick: function () { a.focusSearch = true; Router.go('matches', '', 'fade'); } }, Icon('search'));
 
-  var header = h('div', { class: 'home-header on-maroon' }, [
-    h('div', { class: 'home-hello' }, [h('span', { class: 'hello-small', text: 'Welcome back' }), h('h1', { text: 'Hello, ' + (State.profile.firstName || 'there') })]),
+  var header = h('div', { class: 'home-header' }, [
+    logoMark(),
+    h('h1', { class: 'visually-hidden', text: 'Home' }), // keeps the page heading for screen readers
+    h('div', { class: 'home-spacer' }),
     searchBtn, bell
   ]);
 
@@ -1779,8 +1788,8 @@ Router.register('home', function () {
   var idInput = h('input', { class: 'input', id: 'id-search', type: 'search', placeholder: 'Search by Profile ID', 'aria-label': 'Search by Profile ID', autocomplete: 'off' });
   function searchById() {
     var code = idInput.value.trim().toUpperCase();
-    var found = PROFILES.filter(function (p) { return p.profileCode === code; })[0];
-    if (!code) { UI.toast('Please enter a Profile ID, for example ' + PROFILES[11].profileCode + '.', 'error'); return; }
+    var found = Bridge.publishedProfiles().filter(function (p) { return p.profileCode === code; })[0];
+    if (!code) { UI.toast('Please enter a Profile ID, for example ' + oppositeProfiles()[0].profileCode + '.', 'error'); return; }
     if (!found) { UI.toast('No profile found with this ID.', 'error'); return; }
     openProfile(found.id);
   }
@@ -2033,8 +2042,9 @@ Router.register('matches', function () {
   listBtn.addEventListener('click', function () { a.view = 'list'; refresh(true); });
   cardBtn.addEventListener('click', function () { a.view = 'card'; refresh(true); });
 
+  var shortlistBtn = h('button', { type: 'button', class: 'icon-btn gold-heart', 'aria-label': 'Open shortlist', onClick: function () { Router.go('shortlist'); } }, Icon('heart'));
   var screen = Screen({
-    right: viewToggle,
+    right: h('div', { class: 'header-right' }, [shortlistBtn, viewToggle]),
     body: [
       h('h1', { class: 'q-title tight', text: 'Matches' }),
       h('div', { class: 'field search-field' }, search),
@@ -2064,13 +2074,13 @@ function preferenceMatches(p) {
     { label: 'Age', want: pr.ageMin + ' to ' + pr.ageMax + ' years', ok: age >= pr.ageMin && age <= pr.ageMax },
     { label: 'Height', want: fmtHeight(pr.heightMin) + ' to ' + fmtHeight(pr.heightMax), ok: me.heightIn >= pr.heightMin && me.heightIn <= pr.heightMax },
     { label: 'Marital status', want: pr.maritalStatus.join(', '), ok: pr.maritalStatus.indexOf(me.maritalStatus) !== -1 },
-    { label: 'Religion', want: pr.religion, ok: open(pr.religion) || pr.religion === me.religion },
-    { label: 'Community', want: pr.community, ok: open(pr.community) || pr.community === me.community },
+    { label: 'Religion', want: pr.religion, ok: open(pr.religion) || pr.religion.split(', ').indexOf(me.religion) !== -1 },
+    { label: 'Mother tongue', want: pr.motherTongue || 'Open to all', ok: open(pr.motherTongue || 'Open to all') || pr.motherTongue.split(', ').indexOf(me.motherTongue) !== -1 },
     { label: 'Education', want: pr.education.join(', '), ok: graduate.indexOf(me.education) !== -1 },
-    { label: 'Profession', want: pr.profession, ok: open(pr.profession) || pr.profession === me.profession },
+    { label: 'Profession', want: pr.profession, ok: open(pr.profession) || pr.profession.split(', ').indexOf(me.profession) !== -1 },
     { label: 'Income', want: pr.income, ok: open(pr.income) },
     { label: 'Location', want: pr.location, ok: open(pr.location) },
-    { label: 'Diet', want: pr.diet, ok: open(pr.diet) || pr.diet === me.diet }
+    { label: 'Diet', want: pr.diet, ok: open(pr.diet) || pr.diet.split(', ').indexOf(me.diet) !== -1 }
   ];
 }
 
@@ -2104,6 +2114,7 @@ function infoCard(id, title, rows) {
 
 function showNumberDialog(p) {
   var number = p.contactNumber;
+  Bridge.logContactView(State.userId, p.id, p.name); // every reveal is logged for the admin
   UI.dialog({
     title: 'Contact details', dismissValue: true,
     body: h('div', {}, [
@@ -2209,18 +2220,25 @@ Router.register('profile', function (id) {
   }
   if (a.viewed.indexOf(p.id) !== -1) a.viewed.splice(a.viewed.indexOf(p.id), 1);
   a.viewed.unshift(p.id);
+  return profileView(p, false);
+}, { auth: 'approved' });
 
+// The member's own profile, exactly as other members see it.
+Router.register('myprofile', function () { return profileView(Bridge.ownPreview(), true); }, { auth: 'login' });
+
+function profileView(p, own) {
+  var a = appState();
   var matches = preferenceMatches(p);
   var matched = matches.filter(function (m) { return m.ok; }).length;
   var ring = progressRing(p.compat, 70, 'Compatibility');
   var contactLine = h('dd', { id: 'contact-line' });
-  function paintContact() { contactLine.textContent = a.revealed && a.revealed.indexOf(p.id) !== -1 ? fmtPhone(p.contactNumber) : UI.maskPhone(p.contactNumber); }
+  function paintContact() { contactLine.textContent = own || (a.revealed && a.revealed.indexOf(p.id) !== -1) ? fmtPhone(p.contactNumber) : UI.maskPhone(p.contactNumber); }
   paintContact();
 
   var sections = [
     ['about', 'About', h('section', { class: 'card info-card', id: 'sec-about' }, [h('h3', { text: 'About ' + p.firstName }), h('p', { text: p.about })])],
     ['basic', 'Basic', infoCard('sec-basic', 'Basic details', [['Age', p.age + ' years'], ['Height', fmtHeight(p.heightIn) + ' (' + cmFromInches(p.heightIn) + ' cm)'], ['Marital status', p.maritalStatus], ['Profile ID', p.profileCode], ['Location', p.city + ', ' + p.state + ', ' + p.country]])],
-    ['community', 'Community', infoCard('sec-community', 'Community and horoscope', [['Religion', p.religion], ['Community', p.community], ['Sub-community', p.subCommunity], ['Gotra', p.gotra], ['Mother tongue', p.motherTongue], ['Manglik', p.manglik], ['Rashi', p.rashi], ['Nakshatra', p.nakshatra], ['Time of birth', p.birthTime], ['Place of birth', p.birthPlace]])],
+    ['community', 'Community', infoCard('sec-community', 'Community and horoscope', [['Community', 'Sindhi'], ['Religion', p.religion], ['Mother tongue', p.motherTongue], ['Manglik', p.manglik], ['Rashi', p.rashi], ['Nakshatra', p.nakshatra], ['Time of birth', p.birthTime], ['Place of birth', p.birthPlace]])],
     ['work', 'Education and work', infoCard('sec-work', 'Education and work', [['Qualification', p.education], ['College', p.college], ['Field of study', p.fieldOfStudy], ['Employment', p.employment], ['Profession', p.profession], ['Company', p.company], ['Annual income', p.income]])],
     ['lifestyle', 'Lifestyle', h('section', { class: 'card info-card', id: 'sec-lifestyle' }, [
       h('h3', { text: 'Lifestyle' }),
@@ -2228,7 +2246,7 @@ Router.register('profile', function (id) {
       h('div', { class: 'chips hobby-chips' }, p.hobbies.map(function (hobby) { return h('span', { class: 'chip static-chip', text: hobby }); }))
     ])],
     ['family', 'Family', infoCard('sec-family', 'Family', [['Father', p.fatherOcc], ['Mother', p.motherOcc], ['Brothers', String(p.brothers)], ['Sisters', String(p.sisters)], ['Family type', p.familyType], ['Family values', p.familyValues], ['Native place', p.nativePlace]])],
-    ['partner', 'Partner preferences', h('section', { class: 'card info-card', id: 'sec-partner' }, [
+    ['partner', 'Partner preferences', own ? infoCard('sec-partner', 'Your partner preferences', matches.map(function (m) { return [m.label, m.want]; })) : h('section', { class: 'card info-card', id: 'sec-partner' }, [
       h('h3', { text: 'Partner preferences' }),
       h('p', { class: 'match-line' }, [h('strong', { text: 'You match ' + matched + ' of ' + matches.length + ' preferences' })]),
       h('div', { class: 'match-bar', role: 'img', 'aria-label': matched + ' of ' + matches.length + ' preferences matched' }, h('span', { style: 'width:' + (matched / matches.length * 100) + '%' })),
@@ -2260,7 +2278,7 @@ Router.register('profile', function (id) {
   var content = h('div', { class: 'detail-content' }, [
     h('div', { class: 'detail-title' }, [
       h('div', {}, [h('h2', { text: p.name }), p.verified ? verifiedBadge() : null, h('p', { class: 'muted', text: p.lastActive })]),
-      h('div', { class: 'compat-ring' }, [ring.node, h('span', { class: 'p-active', text: 'Compatibility' })])
+      own ? null : h('div', { class: 'compat-ring' }, [ring.node, h('span', { class: 'p-active', text: 'Compatibility' })])
     ]),
     h('div', { class: 'quick-facts' }, [
       [p.age + ' yrs', 'Age'], [fmtHeight(p.heightIn), 'Height'], [p.city, 'Location'], [p.profession, 'Work']
@@ -2275,24 +2293,496 @@ Router.register('profile', function (id) {
   ]));
 
   var body = h('div', { class: 'screen-body detail-body' }, [buildGallery(p), content]);
-  var actions = h('div', { class: 'action-bar' }, [
-    heartButton(p, true),
-    interestButton(p, 'btn-primary btn-small action-main'),
-    h('button', { type: 'button', class: 'btn btn-outline btn-small action-main', text: 'Show contact', onClick: function () { revealContact(p, paintContact); } })
-  ]);
+  var actions = own
+    ? h('div', { class: 'action-bar' }, h('button', { type: 'button', class: 'btn btn-primary btn-block', text: 'Edit profile', onClick: function () { Router.go('editProfile'); } }))
+    : h('div', { class: 'action-bar' }, [
+      heartButton(p, true),
+      interestButton(p, 'btn-primary btn-small action-main'),
+      h('button', { type: 'button', class: 'btn btn-outline btn-small action-main', text: 'Show contact', onClick: function () { revealContact(p, paintContact); } })
+    ]);
   var header = h('div', { class: 'detail-header on-maroon' }, [
-    h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Go back', onClick: function () { Router.back('matches'); } }, Icon('back')),
-    h('h1', { text: p.name }),
-    h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'More options', onClick: function () { openMoreMenu(p); } }, Icon('dots'))
+    h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Go back', onClick: function () { Router.back(own ? 'account' : 'matches'); } }, Icon('back')),
+    h('h1', { text: own ? 'My profile' : p.name }),
+    own ? h('span', { class: 'icon-btn', 'aria-hidden': 'true' }) : h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'More options', onClick: function () { openMoreMenu(p); } }, Icon('dots'))
   ]);
   var el = h('section', {}, [header, body, actions]);
   return { el: el, title: p.name, mounted: ring.start };
+}
+
+/* =====================================================================
+   PART 3A: INTERESTS (31), SHORTLIST (33), MESSAGES AND CHAT (34)
+   ===================================================================== */
+
+function timeNow() {
+  var d = new Date();
+  return (d.getHours() % 12 || 12) + ':' + ('0' + d.getMinutes()).slice(-2) + (d.getHours() < 12 ? ' AM' : ' PM');
+}
+
+function smallPhoto(p, className) { return h('img', { class: className || 'avatar-sm', src: p.photos[0], alt: '' }); }
+
+function goneScreen() {
+  var screen = Screen({ back: true, body: [emptyBlock('alert', 'This profile is no longer available', 'It may have been removed or hidden.', 'Back to matches', function () { Router.replace('matches'); })] });
+  return { el: screen.el, title: 'Profile' };
+}
+
+/* ---------- 31. Interests ---------- */
+
+var INTEREST_TABS = [['received', 'Received'], ['sent', 'Sent'], ['accepted', 'Accepted'], ['declined', 'Declined']];
+
+function interestInTab(i, key) {
+  if (key === 'received') return i.dir === 'received' && i.status === 'pending';
+  if (key === 'sent') return i.dir === 'sent' && i.status === 'pending';
+  if (key === 'accepted') return i.status === 'accepted';
+  return i.status === 'declined';
+}
+
+// Finds or starts the conversation with this member.
+function ensureChat(profileId) {
+  var chats = chatState();
+  for (var i = 0; i < chats.length; i++) if (chats[i].profileId === profileId) return chats[i];
+  var chat = { profileId: profileId, unread: 0, messages: [] };
+  chats.unshift(chat);
+  return chat;
+}
+
+function chatState() {
+  var a = appState();
+  if (!a.chats) {
+    var o = oppositeProfiles();
+    a.chats = CHATS.filter(function (c) { return o[c.slot]; }).map(function (c) {
+      return { profileId: o[c.slot].id, unread: c.unread, messages: c.messages.map(function (m) { return Object.assign({}, m); }) };
+    });
+  }
+  return a.chats;
+}
+
+Router.register('interests', function () {
+  var a = appState();
+  var tab = a.interestTab || 'received';
+  var tabsBox = h('div', { class: 'seg-tabs', role: 'tablist', 'aria-label': 'Interests' });
+  var list = h('div', { class: 'interest-list' });
+
+  function visibleItems(key) {
+    return a.interests.filter(function (i) { return interestInTab(i, key) && profileById(i.profileId); });
+  }
+
+  function paintTabs() {
+    clearNode(tabsBox);
+    INTEREST_TABS.forEach(function (t) {
+      var count = visibleItems(t[0]).length;
+      var button = h('button', { type: 'button', class: 'seg-tab' + (t[0] === tab ? ' on' : ''), role: 'tab', 'aria-selected': t[0] === tab ? 'true' : 'false' }, [
+        h('span', { text: t[1] }), count ? h('span', { class: 'seg-count', text: String(count) }) : null
+      ]);
+      button.addEventListener('click', function () { tab = t[0]; a.interestTab = tab; paintTabs(); loadList(list, renderList, 400); });
+      tabsBox.appendChild(button);
+    });
+  }
+
+  var EMPTY = {
+    received: ['No interests received yet', 'When someone sends you an interest, it will show here.'],
+    sent: ['You have not sent any interest', 'Find a match you like and tap Send interest.'],
+    accepted: ['No accepted interests yet', 'Accepted interests appear here so you can start a conversation.'],
+    declined: ['Nothing declined', 'Interests you decline will be listed here.']
+  };
+
+  function interestCard(item, p) {
+    var link = h('a', { class: 'list-link', href: '#/profile/' + p.id, 'aria-label': 'Open profile of ' + p.name }, [
+      h('div', { class: 'list-photo small' }, h('img', { src: p.photos[0], alt: 'Photo of ' + p.name })),
+      h('div', { class: 'list-info' }, [
+        h('h3', { text: p.name }), p.verified ? verifiedBadge() : null,
+        h('p', { class: 'p-line', text: p.age + ' yrs • ' + p.profession }), h('p', { class: 'p-line', text: p.city }),
+        h('p', { class: 'p-active', text: (item.dir === 'received' ? 'Received ' : 'Sent ') + item.time.toLowerCase() })
+      ])
+    ]);
+    link.addEventListener('click', function (event) { event.preventDefault(); openProfile(p.id); });
+    var actions = h('div', { class: 'interest-actions' });
+    if (tab === 'received') {
+      actions.appendChild(h('button', { type: 'button', class: 'btn btn-primary btn-small', onClick: function () {
+        item.status = 'accepted'; item.time = 'Just now';
+        UI.toast('You accepted ' + p.firstName + '’s interest');
+        paintTabs(); renderList();
+      } }, [Icon('check', 20), 'Accept']));
+      actions.appendChild(h('button', { type: 'button', class: 'btn btn-outline btn-small', onClick: function () {
+        item.status = 'declined';
+        UI.toast('Interest declined', 'info');
+        paintTabs(); renderList();
+      } }, [Icon('close', 20), 'Decline']));
+    } else if (tab === 'accepted') {
+      actions.appendChild(h('button', { type: 'button', class: 'btn btn-primary btn-small btn-block', onClick: function () { ensureChat(p.id); Router.go('chat', p.id); } }, [Icon('chat', 20), 'Message']));
+    } else if (tab === 'sent') {
+      actions.appendChild(h('p', { class: 'muted status-note', text: 'Waiting for ' + p.firstName + ' to reply' }));
+    } else {
+      actions.appendChild(h('p', { class: 'muted status-note', text: 'You declined this interest' }));
+    }
+    return h('article', { class: 'card list-card' }, [link, actions]);
+  }
+
+  function renderList() {
+    clearNode(list);
+    var items = visibleItems(tab);
+    if (!items.length) { list.appendChild(emptyBlock('heart', EMPTY[tab][0], EMPTY[tab][1], tab === 'received' || tab === 'sent' ? 'Browse matches' : null, function () { Router.go('matches', '', 'fade'); })); return; }
+    items.forEach(function (item) { list.appendChild(interestCard(item, profileById(item.profileId))); });
+  }
+
+  var screen = Screen({ body: [h('h1', { class: 'q-title tight', text: 'Interests' }), tabsBox, list] });
+  paintTabs();
+  loadList(list, renderList, 500);
+  return { el: screen.el, tab: 'interests', title: 'Interests' };
 }, { auth: 'approved' });
 
-/* ---------- Tabs built in Part 3 (temporary placeholders so no tab is empty) ---------- */
-['interests', 'messages', 'account'].forEach(function (name) {
-  Router.register(name, function () {
-    var screen = Screen({ body: [h('h1', { class: 'q-title', text: cap(name) }), emptyBlock('clock', 'Coming in Part 3', 'This tab is built in the next part of the demo.')] });
-    return { el: screen.el, tab: name, title: cap(name) };
-  }, { auth: 'approved' });
-});
+/* ---------- 33. Shortlist ---------- */
+
+Router.register('shortlist', function () {
+  var a = appState();
+  var list = h('div');
+
+  function removeWithConfirm(p) {
+    UI.confirm({ title: 'Remove from shortlist?', message: p.name + ' will be removed from your shortlist.', confirmText: 'Remove', danger: true }).then(function (yes) {
+      if (!yes) return;
+      toggleShortlist(p.id);
+      UI.toast('Removed from shortlist', 'info');
+      renderList();
+    });
+  }
+
+  function renderList() {
+    clearNode(list);
+    // Profiles the admin has hidden or removed since are dropped quietly.
+    var valid = a.shortlist.filter(function (id) { return profileById(id); });
+    if (valid.length !== a.shortlist.length) { a.shortlist = valid; Bridge.saveShortlist(State.userId, valid); }
+    if (!valid.length) { list.appendChild(emptyBlock('heart', 'Your shortlist is empty', 'Tap the heart on profiles you like and they will be saved here.', 'Browse matches', function () { Router.go('matches', '', 'fade'); })); return; }
+    valid.forEach(function (id) {
+      var p = profileById(id);
+      list.appendChild(listCard(p, { noHeart: true, actions: [
+        interestButton(p, 'btn-primary btn-small btn-block'),
+        h('button', { type: 'button', class: 'btn btn-outline btn-small btn-block remove-btn', onClick: function () { removeWithConfirm(p); } }, [Icon('trash', 20), 'Remove']),
+      ] }));
+    });
+  }
+
+  var screen = Screen({ back: true, body: [h('h1', { class: 'q-title tight', text: 'Shortlist' }), list] });
+  loadList(list, renderList, 500);
+  return { el: screen.el, tab: 'matches', title: 'Shortlist' };
+}, { auth: 'approved' });
+
+/* ---------- 34. Messages ---------- */
+
+Router.register('messages', function () {
+  var list = h('div', { class: 'conv-list' });
+  function renderList() {
+    clearNode(list);
+    var chats = chatState().filter(function (c) { return profileById(c.profileId); });
+    if (!chats.length) { list.appendChild(emptyBlock('chat', 'No conversations yet', 'Accept an interest or message a match to start talking.', 'Browse matches', function () { Router.go('matches', '', 'fade'); })); return; }
+    chats.forEach(function (chat) {
+      var p = profileById(chat.profileId);
+      var last = chat.messages[chat.messages.length - 1];
+      var row = h('button', { type: 'button', class: 'conv-row' + (chat.unread ? ' unread' : '') }, [
+        smallPhoto(p, 'avatar-md'),
+        h('span', { class: 'conv-text' }, [
+          h('span', { class: 'conv-name', text: p.name }),
+          h('span', { class: 'conv-last', text: last ? (last.from === 'me' ? 'You: ' : '') + last.text : 'Say hello to ' + p.firstName })
+        ]),
+        h('span', { class: 'conv-meta' }, [h('span', { class: 'p-active', text: last ? last.time : '' }), chat.unread ? h('span', { class: 'unread-count', text: String(chat.unread), 'aria-label': chat.unread + ' unread' }) : null])
+      ]);
+      row.addEventListener('click', function () { Router.go('chat', p.id); });
+      list.appendChild(row);
+    });
+  }
+  var screen = Screen({ body: [h('h1', { class: 'q-title tight', text: 'Messages' }), list] });
+  loadList(list, renderList, 500);
+  return { el: screen.el, tab: 'messages', title: 'Messages' };
+}, { auth: 'approved' });
+
+var CANNED_REPLIES = [
+  'Thank you for reaching out. I will discuss with my family and reply soon.',
+  'Nice to hear from you. Shall we speak this weekend?',
+  'Yes, please share your family details too.'
+];
+
+Router.register('chat', function (id) {
+  var p = profileById(id);
+  if (!p) return goneScreen();
+  var chat = ensureChat(id);
+  chat.unread = 0;
+  var thread = h('div', { class: 'thread', 'aria-live': 'polite' });
+  var input = h('input', { class: 'input chat-input', type: 'text', placeholder: 'Type a message', maxlength: '300', 'aria-label': 'Message', autocomplete: 'off' });
+
+  function bubble(m) { return h('div', { class: 'bubble ' + (m.from === 'me' ? 'me' : 'them') }, [h('span', { text: m.text }), h('span', { class: 'bubble-time', text: m.time })]); }
+  function paint() {
+    clearNode(thread);
+    if (!chat.messages.length) thread.appendChild(h('p', { class: 'muted center', text: 'No messages yet. Say hello to ' + p.firstName + '.' }));
+    chat.messages.forEach(function (m) { thread.appendChild(bubble(m)); });
+    body.scrollTop = body.scrollHeight;
+  }
+  function send(text) {
+    text = String(text || '').trim();
+    if (!text) { UI.toast('Please type a message first.', 'error'); return; }
+    chat.messages.push({ from: 'me', text: text, time: timeNow() });
+    var chats = chatState();
+    chats.splice(chats.indexOf(chat), 1);
+    chats.unshift(chat); // the newest conversation goes to the top of the list
+    input.value = '';
+    paint();
+    setTimeout(function () {
+      chat.messages.push({ from: 'them', text: CANNED_REPLIES[chat.messages.length % CANNED_REPLIES.length], time: timeNow() });
+      if (document.body.contains(thread)) paint();
+    }, 1500);
+  }
+  input.addEventListener('keydown', function (event) { if (event.key === 'Enter') { event.preventDefault(); send(input.value); } });
+
+  var quick = h('div', { class: 'quick-replies', role: 'group', 'aria-label': 'Quick replies' }, QUICK_REPLIES.map(function (text) {
+    return h('button', { type: 'button', class: 'chip', text: text, onClick: function () { send(text); } });
+  }));
+  var header = h('div', { class: 'detail-header on-maroon' }, [
+    h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Go back', onClick: function () { Router.back('messages'); } }, Icon('back')),
+    smallPhoto(p, 'avatar-sm'),
+    h('h1', { text: p.name }),
+    h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Open profile', onClick: function () { openProfile(p.id); } }, Icon('user'))
+  ]);
+  var body = h('div', { class: 'screen-body chat-body' }, thread);
+  var bar = h('div', { class: 'chat-bar' }, [input, h('button', { type: 'button', class: 'btn btn-primary send-btn', 'aria-label': 'Send message', onClick: function () { send(input.value); } }, Icon('send', 22))]);
+  var el = h('section', {}, [header, body, quick, bar]);
+  return { el: el, title: p.name, mounted: function () { paint(); } };
+}, { auth: 'approved' });
+
+/* =====================================================================
+   PART 3B: ACCOUNT (36) AND ITS SCREENS
+   ===================================================================== */
+
+var EDIT_SECTIONS = [
+  ['Basic details', 'name', 'Name, date of birth, marital status, height'], ['Community', 'community', 'Religion and mother tongue'],
+  ['Location', 'location', 'Country, state, city'], ['Education', 'education', 'Qualification and college'],
+  ['Work and income', 'work', 'Profession, company, income'], ['Lifestyle and interests', 'lifestyle', 'Diet, habits, hobbies'],
+  ['Horoscope', 'horoscope', 'Birth time, rashi, kundali'], ['Family details', 'family', 'Parents, siblings, family type'],
+  ['About me', 'about', 'A few lines about yourself'], ['Photos', 'photos', 'Add, remove, choose the main photo'],
+  ['Biodata and documents', 'documents', 'Biodata and ID proof']
+];
+
+function accountPhoto() { return State.profile.photos[0] || GENDER_ART[State.profile.gender || 'male']; }
+
+// Saves right away (no new review) after the member returns from one of these steps.
+function editThenSave(step) {
+  State.autoSave = true;
+  startEditing(step);
+}
+
+function menuRow(icon, label, sub, onClick, extraClass) {
+  var row = h('button', { type: 'button', class: 'menu-item ' + (extraClass || '') }, [
+    h('span', { class: 'menu-ico' }, Icon(icon)),
+    h('span', { class: 'menu-text' }, [h('span', { class: 'menu-label', text: label }), sub ? h('span', { class: 'p-active', text: sub }) : null]),
+    Icon('right')
+  ]);
+  row.addEventListener('click', onClick);
+  return row;
+}
+
+function openPhotoPrivacy() {
+  UI.sheet({
+    title: 'Photo privacy', dismissValue: null,
+    render: function (close) {
+      var save = h('button', { type: 'button', class: 'btn btn-primary', text: 'Save', onClick: function () { close('save'); } });
+      return { body: h('div', {}, [h('p', { class: 'muted', text: 'Choose who can see your photos.' }), optionCards(State.profile, 'photoPrivacy', OPTIONS.photoPrivacy)]), footer: save };
+    }
+  }).promise.then(function (result) {
+    if (result !== 'save') return;
+    Bridge.saveProfileData();
+    UI.toast('Photo privacy saved');
+  });
+}
+
+/* ---------- 36. Account ---------- */
+Router.register('account', function () {
+  var percent = completionPercent();
+  var ring = progressRing(percent, 84, 'Profile completion');
+  var profileCard = h('div', { class: 'card account-card' }, [
+    h('img', { class: 'account-photo', src: accountPhoto(), alt: 'Your main photo' }),
+    h('div', { class: 'account-info' }, [
+      h('h2', { text: myName() }),
+      h('p', { class: 'muted', text: 'Profile ID: ' + Bridge.ownCode() }),
+      h('button', { type: 'button', class: 'btn btn-outline btn-small', onClick: function () { Router.go('editProfile'); } }, [Icon('edit', 20), 'Edit profile'])
+    ]),
+    ring.node
+  ]);
+  var menu = h('div', { class: 'menu-list' }, [
+    menuRow('user', 'My profile', 'See how others see you', function () { Router.go('myprofile'); }),
+    menuRow('edit', 'Edit profile sections', 'Changes are reviewed again', function () { Router.go('editProfile'); }),
+    menuRow('heart', 'Shortlisted profiles', null, function () { Router.go('shortlist'); }),
+    menuRow('lock', 'Photo privacy', null, openPhotoPrivacy),
+    menuRow('users', 'Partner preferences', null, function () { editThenSave('partner'); }),
+    menuRow('verified', 'Verification status', null, function () { Router.go('verification'); }),
+    menuRow('crown', 'Premium plans', null, function () { Router.go('plans'); }, 'gold'),
+    menuRow('gift', 'Success stories', null, function () { Router.go('stories'); }),
+    menuRow('settings', 'Settings', null, function () { Router.go('settings'); }),
+    menuRow('help', 'Help and support', null, function () { Router.go('help'); }),
+    menuRow('info', 'About', null, function () { Router.go('about'); }),
+    menuRow('logout', 'Logout', null, logout, 'danger')
+  ]);
+  var screen = Screen({ body: [h('h1', { class: 'q-title tight', text: 'Account' }), profileCard, h('p', { class: 'muted center', text: 'Phone: +91 ' + fmtPhone(State.phone) }), menu, h('p', { class: 'muted center', style: 'margin-top:16px', text: 'Profiles are shared only for marriage purposes. Do not share or screenshot profiles.' })] });
+  return {
+    el: screen.el, tab: 'account', title: 'Account',
+    mounted: function () {
+      ring.start();
+      if (State.autoSave) { State.autoSave = false; if (Bridge.saveProfileData()) UI.toast('Your changes were saved'); }
+    }
+  };
+}, { auth: 'approved' });
+
+/* ---------- Edit profile (an approved profile goes back for review) ---------- */
+Router.register('editProfile', function () {
+  if (!State.editSnapshot) State.editSnapshot = JSON.stringify(State.profile);
+  function dirty() { return JSON.stringify(State.profile) !== State.editSnapshot; }
+
+  function leave() {
+    if (!dirty()) { State.editSnapshot = null; Router.back('account'); return; }
+    UI.confirm({ title: 'Discard your changes?', message: 'You have changes that are not saved.', confirmText: 'Discard', cancelText: 'Keep editing', danger: true }).then(function (yes) {
+      if (!yes) return;
+      State.profile = JSON.parse(State.editSnapshot);
+      State.editSnapshot = null;
+      Router.back('account');
+    });
+  }
+
+  function save() {
+    if (!dirty()) { UI.toast('You have not changed anything yet.', 'info'); return; }
+    UI.confirm({
+      title: 'Send for review again?',
+      message: 'Saving these changes sends your profile back for approval. You will not be able to browse matches until it is approved again. Continue?',
+      confirmText: 'Save and send', cancelText: 'Cancel'
+    }).then(function (yes) {
+      if (!yes) return;
+      if (!Bridge.submitProfile()) { UI.toast('Could not save. Your browser storage is full or blocked.', 'error'); return; }
+      State.editSnapshot = null;
+      UI.toast('Changes saved. Your profile is under review.');
+      Router.replace('pending');
+    });
+  }
+
+  var rows = EDIT_SECTIONS.map(function (s) { return menuRow('edit', s[0], s[2], function () { startEditing(s[1]); }); });
+  var screen = Screen({
+    back: true, onBack: leave,
+    body: [h('h1', { class: 'q-title tight', text: 'Edit profile' }), h('div', { class: 'warn-note', style: 'margin:0 0 16px' }, [Icon('alert'), h('span', { text: 'After you save, your profile is reviewed again before others can see it.' })]), h('div', { class: 'menu-list' }, rows)],
+    footer: bigButton('Save changes', save)
+  });
+  return { el: screen.el, tab: 'account', title: 'Edit profile' };
+}, { auth: 'approved' });
+
+/* ---------- Verification status ---------- */
+Router.register('verification', function () {
+  var p = State.profile;
+  var items = [
+    { label: 'Phone verified', ok: true, note: '+91 ' + fmtPhone(State.phone) },
+    { label: 'ID verified', ok: Boolean(p.idFile) && State.status === 'approved', note: p.idFile ? p.idType + ': ' + p.idFile : 'Upload an ID proof to get verified', step: 'documents', cta: 'Upload ID' },
+    { label: 'Photo verified', ok: p.photos.length > 0 && State.status === 'approved', note: p.photos.length ? p.photos.length + ' photo(s) on your profile' : 'Add a clear photo of your face', step: 'photos', cta: 'Add photo' }
+  ];
+  var rows = items.map(function (item) {
+    return h('div', { class: 'verify-row' }, [
+      h('span', { class: 'match-icon ' + (item.ok ? 'ok' : 'no'), 'aria-label': item.ok ? 'Done' : 'Not done' }, Icon(item.ok ? 'check' : 'close', 18)),
+      h('span', { class: 'menu-text' }, [h('strong', { text: item.label }), h('span', { class: 'muted', text: item.note })]),
+      !item.ok && item.step ? h('button', { type: 'button', class: 'btn btn-outline btn-small', text: item.cta, onClick: function () { editThenSave(item.step); } }) : null
+    ]);
+  });
+  var done = items.filter(function (i) { return i.ok; }).length;
+  var screen = Screen({ back: true, body: [h('h1', { class: 'q-title tight', text: 'Verification' }), h('p', { class: 'q-helper', text: done + ' of 3 checks complete. Verified profiles get more interest.' }), h('div', { class: 'card' }, rows), h('div', { class: 'info-note' }, [Icon('lock'), h('span', { text: 'Your ID is used only for verification and is never shown to members.' })])] });
+  return { el: screen.el, tab: 'account', title: 'Verification' };
+}, { auth: 'approved' });
+
+/* ---------- Premium plans ---------- */
+Router.register('plans', function () {
+  var cards = PLANS.map(function (plan) {
+    return h('section', { class: 'card plan-card' + (plan.tag ? ' featured' : '') }, [
+      plan.tag ? h('span', { class: 'plan-tag', text: plan.tag }) : null,
+      h('div', { class: 'plan-head' }, [h('span', { class: 'crown' }, Icon('crown', 30)), h('h2', { text: plan.months + ' months' })]),
+      h('p', { class: 'plan-price' }, [h('strong', { text: '₹' + plan.price }), h('span', { class: 'muted', text: '  (₹' + plan.perMonth + ' a month)' })]),
+      h('ul', { class: 'plan-features' }, plan.features.map(function (f) { return h('li', {}, [Icon('check', 18), h('span', { text: f })]); })),
+      h('button', { type: 'button', class: 'btn btn-block ' + (plan.tag ? 'btn-gold' : 'btn-outline'), text: 'Choose plan', onClick: function () { UI.toast('Demo only. Payments are not part of this demo.', 'info'); } })
+    ]);
+  });
+  var screen = Screen({ back: true, body: [h('h1', { class: 'q-title tight', text: 'Premium plans' }), h('p', { class: 'q-helper', text: 'Get more from your search.' })].concat(cards) });
+  return { el: screen.el, tab: 'account', title: 'Premium plans' };
+}, { auth: 'approved' });
+
+/* ---------- Success stories ---------- */
+Router.register('stories', function () {
+  var cards = STORIES.map(function (s) {
+    return h('article', { class: 'card story-card' }, [
+      h('div', { class: 'story-photos' }, [h('img', { src: s.photos[0], alt: 'Groom ' + s.names.split(' and ')[0] }), h('img', { src: s.photos[1], alt: 'Bride ' + s.names.split(' and ')[1] }), h('span', { class: 'story-heart' }, Icon('heart', 22))]),
+      h('h3', { text: s.names }), h('p', { class: 'p-active', text: s.place + ', ' + s.year }), h('p', { text: '“' + s.text + '”' })
+    ]);
+  });
+  var screen = Screen({ back: true, body: [h('h1', { class: 'q-title tight', text: 'Success stories' }), h('p', { class: 'q-helper', text: 'Couples who found each other in the Sindhi community.' })].concat(cards) });
+  return { el: screen.el, tab: 'account', title: 'Success stories' };
+}, { auth: 'approved' });
+
+/* ---------- Settings ---------- */
+Router.register('settings', function () {
+  var a = appState();
+  a.settings = a.settings || { matches: true, interests: true, messages: true, hidden: false };
+  function toggleRow(label, key) {
+    return h('div', { class: 'switch-row' }, [h('span', { text: label }), switchButton(a.settings[key], label, function (on) { a.settings[key] = on; UI.toast(label + (on ? ' on' : ' off'), 'info'); })]);
+  }
+  var language = h('select', { class: 'select', id: 'lang', 'aria-label': 'Language' }, [h('option', { value: 'en', text: 'English' }), h('option', { value: 'hi', text: 'Hindi' })]);
+  language.addEventListener('change', function () {
+    if (language.value === 'hi') { UI.toast('Hindi is not available in this demo. English stays on.', 'error'); language.value = 'en'; }
+  });
+  var hideRow = h('div', { class: 'switch-row' }, [
+    h('span', { class: 'menu-text' }, [h('span', { text: 'Hide my profile' }), h('span', { class: 'p-active', text: 'Others will not see it until you turn this off' })]),
+    switchButton(a.settings.hidden, 'Hide my profile temporarily', function (on) { a.settings.hidden = on; UI.toast(on ? 'Your profile is hidden for now' : 'Your profile is visible again', 'info'); })
+  ]);
+  var screen = Screen({
+    back: true,
+    body: [
+      h('h1', { class: 'q-title tight', text: 'Settings' }),
+      h('h3', { class: 'section-label', text: 'Notifications' }), h('div', { class: 'card' }, [toggleRow('New matches', 'matches'), toggleRow('Interests', 'interests'), toggleRow('Messages', 'messages')]),
+      h('h3', { class: 'section-label', text: 'Language' }), fieldWrap('', language, null, 'Only English is available in this demo.', 'lang'),
+      h('h3', { class: 'section-label', text: 'Privacy' }), h('div', { class: 'card' }, hideRow),
+      h('h3', { class: 'section-label', text: 'Account' }),
+      h('button', { type: 'button', class: 'btn btn-danger btn-block', onClick: function () {
+        UI.confirm({ title: 'Delete your account?', message: 'Your profile, shortlist and messages will be removed. This cannot be undone.', confirmText: 'Delete account', danger: true }).then(function (yes) {
+          if (!yes) return;
+          if (!Bridge.deleteAccount()) { UI.toast('Could not delete the account. Please try again.', 'error'); return; }
+          resetState();
+          UI.toast('Your account was deleted');
+          Router.replace('phone');
+        });
+      } }, [Icon('trash', 20), 'Delete account'])
+    ]
+  });
+  return { el: screen.el, tab: 'account', title: 'Settings' };
+}, { auth: 'approved' });
+
+/* ---------- Help and support ---------- */
+Router.register('help', function () {
+  var items = FAQ.map(function (f, i) {
+    var answer = h('p', { class: 'faq-answer', id: 'faq-a' + i, text: f.a });
+    answer.hidden = true;
+    var question = h('button', { type: 'button', class: 'faq-q', 'aria-expanded': 'false', 'aria-controls': 'faq-a' + i }, [h('span', { text: f.q }), Icon('down')]);
+    question.addEventListener('click', function () {
+      var open = question.getAttribute('aria-expanded') !== 'true';
+      question.setAttribute('aria-expanded', open ? 'true' : 'false');
+      answer.hidden = !open;
+      question.parentNode.classList.toggle('open', open);
+    });
+    return h('div', { class: 'faq-item' }, [question, answer]);
+  });
+  var screen = Screen({
+    back: true,
+    body: [h('h1', { class: 'q-title tight', text: 'Help and support' }), h('div', { class: 'card faq' }, items), h('h3', { class: 'section-label', text: 'Still need help?' }), bigButton('Call support', showSupport)]
+  });
+  return { el: screen.el, tab: 'account', title: 'Help and support' };
+}, { auth: 'approved' });
+
+/* ---------- About ---------- */
+Router.register('about', function () {
+  var screen = Screen({
+    back: true,
+    body: [
+      h('div', { class: 'about-hero' }, [logoMark(), h('h1', { class: 'center', text: APP_NAME }), h('p', { class: 'muted center', text: 'Version 1.0 (demo)' })]),
+      h('div', { class: 'card' }, [
+        h('p', { text: APP_NAME + ' is a matrimonial service for the Sindhi community. Every profile is reviewed by our team, and contact details are shown only to approved members.' }),
+        h('p', { class: 'muted', text: 'Profiles are shared only for marriage purposes. Please respect the privacy of every family.' })
+      ]),
+      h('div', { class: 'info-note' }, [Icon('info'), h('span', { text: 'This is a demo. All people, photos and phone numbers shown are made up.' })])
+    ]
+  });
+  return { el: screen.el, tab: 'account', title: 'About' };
+}, { auth: 'approved' });

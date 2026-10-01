@@ -308,7 +308,7 @@ function openViewModal(profileId) {
           <strong style="color: var(--maroon); display: block; margin-bottom: 0.3rem;">Personal & Location</strong>
           <div><strong>City:</strong> ${escapeHtml(profile.city || 'N/A')}</div>
           <div><strong>Height:</strong> ${escapeHtml(profile.height || 'N/A')}</div>
-          <div><strong>Sub-Community / Gotra:</strong> ${escapeHtml(profile.religionDetails || 'N/A')}</div>
+          <div><strong>Religion / Community:</strong> ${escapeHtml(profile.religionDetails || 'N/A')}</div>
         </div>
 
         <div>

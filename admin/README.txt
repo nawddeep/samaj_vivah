@@ -3,7 +3,7 @@ COMMUNITY MATRIMONY ADMIN PANEL - DEMO VERSION
 ========================================================================
 
 ABOUT THE APPLICATION:
-This is the Admin Web Dashboard prototype for a single-community Matrimonial
+This is the Admin Web Dashboard prototype for a single-community (Sindhi) Matrimonial
 Application. It runs 100% offline in the browser using HTML5, CSS3, Vanilla
 JavaScript (ES6), and browser localStorage. No server, database, or build tools
 are required.
@@ -43,7 +43,7 @@ ADMIN PANEL FEATURES & SCREENS:
 
 4. ADD / EDIT PROFILE (add-profile.html):
    - Comprehensive multi-card form: Personal, Education/Career, Family, 
-     Community/Gotra, Partner Expectations, and Contact Info.
+     Religion details, Partner Expectations, and Contact Info.
    - Multi-photo upload (up to 5 images) with automatic client-side canvas 
      compression to Base64 (max 800px width).
    - Biodata PDF/Image attachment upload (up to 3MB).

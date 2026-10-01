@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Samaj Vivah Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --cream: #FFF8EC; --ivory: #FFFDF7; --maroon: #7B1E2B; --maroon-deep: #5A1220; --gold: #C9A24D; --text: #2E1F1A; --soft: #7A6A62; --border: #E8DCC8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 32px 16px; background: var(--cream); color: var(--text); font: 400 16px/1.5 'Poppins', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; }
+    main { max-width: 760px; margin: 0 auto; }
+    h1, h2 { font-family: 'Playfair Display', Georgia, serif; margin: 0 0 8px; }
+    h1 { font-size: 34px; }
+    .lead { color: var(--soft); margin: 0 0 24px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .card { display: flex; flex-direction: column; padding: 20px; background: var(--ivory); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 2px 12px rgba(90, 18, 32, 0.08); }
+    .card p { color: var(--soft); flex: 1; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 12px 24px; border-radius: 999px; background: var(--maroon); color: #fff; font-weight: 600; text-decoration: none; }
+    .btn:hover { background: var(--maroon-deep); }
+    .note { margin-top: 24px; padding: 16px; background: #fff; border: 1px solid var(--border); border-radius: 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px 6px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--soft); font-weight: 500; }
+    .badge { display: inline-block; padding: 1px 10px; border: 1px solid var(--maroon); border-radius: 999px; color: var(--maroon); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <main>
+    <span class="badge">Demo Version</span>
+    <h1>Samaj Vivah</h1>
+    <p class="lead">One demo, two apps. Both read and write the same browser data, so what you do in one shows up in the other.</p>
+
+    <div class="cards">
+      <section class="card">
+        <h2>Member app</h2>
+        <p>The mobile app for members: sign up, create a profile, wait for approval, browse matches.</p>
+        <a class="btn" href="user/index.html" target="_blank" rel="noopener">Open member app</a>
+      </section>
+      <section class="card">
+        <h2>Admin panel</h2>
+        <p>Approve or reject members, add and hide profiles. Login: admin@demo.com / Admin@123</p>
+        <a class="btn" href="admin/index.html" target="_blank" rel="noopener">Open admin panel</a>
+      </section>
+    </div>
+
+    <section class="note">
+      <h2>Try the whole loop</h2>
+      <ol>
+        <li>Open the member app in one tab and sign up with any new 10-digit number (the OTP fills in by itself).</li>
+        <li>Open the admin panel in another tab, go to User Approvals, and approve or reject the new member.</li>
+        <li>Switch back to the member app. It updates by itself, and an approved member can browse matches.</li>
+        <li>In the admin panel, hide a profile. It disappears from the member app.</li>
+      </ol>
+      <h2>Ready-made members to log in with</h2>
+      <table>
+        <thead><tr><th>Mobile number</th><th>Status</th><th>What you see</th></tr></thead>
+        <tbody>
+          <tr><td>9000000005</td><td>Approved</td><td>Congratulations, then Home</td></tr>
+          <tr><td>9000000001</td><td>Pending</td><td>Under review</td></tr>
+          <tr><td>9000000009</td><td>Rejected</td><td>The admin's reason</td></tr>
+          <tr><td>9000000011</td><td>Blocked</td><td>Account blocked</td></tr>
+        </tbody>
+      </table>
+      <p class="lead" style="margin:12px 0 0">Open both apps from this page (the same address), so they share data. Use "Reset Demo Data" in the admin sidebar to start fresh.</p>
+    </section>
+  </main>
+</body>
+</html>

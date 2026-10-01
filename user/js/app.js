@@ -99,10 +99,15 @@ var State = {};
 
 function resetState() {
   State.phone = '';
+  State.userId = null;         // id of the record in the admin's mm_users
+  State.rejectReason = '';     // the reason the admin typed when rejecting
+  State.approvalPending = false; // approved but the congratulations screen was not shown yet
   State.loggedIn = false;
   State.status = 'none';       // none | pending | approved | rejected | blocked
   State.cameFromWelcome = false; // the mobile number screen shows a back arrow only after the welcome slides
   State.app = null;            // main-app state (shortlist, interests, filters) is created on first use
+  State.editSnapshot = null;   // copy of the profile taken when the member starts editing, to detect unsaved changes
+  State.autoSave = false;      // save quietly when the member returns from editing preferences or documents
   State.editing = false;       // true while a step was opened from "Edit" on the review screen
   State.editBase = 0;          // history position of the review screen while editing
   State.fromBiodata = false;
@@ -254,10 +259,10 @@ var Router = (function () {
   var nav = null;
   var APP_TITLE = APP_NAME;
 
-  // register(name, build, { auth: 'login' | 'approved' })
+  // register(name, build, { auth: 'login' | 'approved', only: 'pending' | 'rejected' | ... })
   // build(param) returns { el, tab, leave(), mounted() }
   function register(name, build, options) {
-    routes[name] = { build: build, auth: (options && options.auth) || null };
+    routes[name] = { build: build, auth: (options && options.auth) || null, only: (options && options.only) || null };
   }
 
   function hashFor(name, param) {
@@ -274,11 +279,13 @@ var Router = (function () {
   // Where the app should be for the current login and profile status.
   function gateName() {
     if (!State.loggedIn) return 'phone';
+    if (State.status === 'approved' && State.approvalPending) return 'approved'; // show the congratulations once
     var map = { none: 'choice', pending: 'pending', approved: 'home', rejected: 'rejected', blocked: 'blocked' };
     return map[State.status] || 'phone';
   }
 
   function allowed(route) {
+    if (route.only && State.status !== route.only) return false; // a status screen only for that status
     if (route.auth === 'approved') return State.status === 'approved';
     if (route.auth === 'login') return State.loggedIn;
     return true;
@@ -311,6 +318,7 @@ var Router = (function () {
   }
 
   function render(dir) {
+    if (window.Bridge) Bridge.sync(); // the admin may have changed this user's status
     var parsed = parse();
     var route = routes[parsed.name];
     if (!route) {
@@ -372,6 +380,21 @@ var Router = (function () {
     if (view.mounted) view.mounted();
   }
 
+  // Called when another tab (the admin panel) changed shared data, or this tab was focused again.
+  function recheck() {
+    if (!window.Bridge || !stage) return;
+    var before = State.status;
+    Bridge.sync();
+    var route = routes[parse().name];
+    if (!route) return;
+    if (State.loggedIn && before === 'pending' && State.status === 'approved') {
+      UI.toast('Your profile was approved!');
+      replace('approved');
+    } else if (!allowed(route)) {
+      replace(gateName());
+    }
+  }
+
   function start() {
     stage = document.getElementById('stage');
     nav = document.getElementById('bottom-nav');
@@ -384,11 +407,16 @@ var Router = (function () {
       currentI = i;
       render(dir);
     });
-    // A refresh always restarts the demo from the splash screen.
+    window.addEventListener('storage', function (event) {
+      if (event.key === null || event.key === 'mm_users' || event.key === 'mm_profiles') recheck();
+    });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) recheck(); });
+    window.addEventListener('focus', recheck);
+    // A refresh starts again at the splash, which restores a saved login.
     currentI = 0;
     window.history.replaceState({ i: 0 }, '', hashFor('splash'));
     render('fade');
   }
 
-  return { register: register, start: start, go: go, replace: replace, back: back, backBy: backBy, index: index, gateName: gateName };
+  return { register: register, start: start, go: go, replace: replace, back: back, backBy: backBy, index: index, gateName: gateName, recheck: recheck };
 })();
