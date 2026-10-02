@@ -116,6 +116,32 @@ function resetState() {
 }
 resetState();
 
+/* ---------- Access rules: the ONE place that says what each status may do ---------- */
+
+// pending = under review (browse only). rejected and blocked can only see their own status screen.
+// "none" = signed in but has not filled the form yet, treated like pending (browse only).
+var ACCESS = {
+  none:     { browse: true },
+  pending:  { browse: true },
+  approved: { browse: true, viewContact: true, sendInterest: true, acceptInterest: true, chat: true, shortlist: true, premium: true, report: true },
+  rejected: {},
+  blocked:  {}
+};
+
+// canUse('sendInterest') etc. Every button and every route asks here; nothing else checks the status.
+function canUse(action) { return Boolean((ACCESS[State.status] || {})[action]); }
+
+// Screens subscribe here to repaint (banner, locked buttons) the moment the status changes, with no reload.
+var Access = {
+  listeners: [],
+  lastStatus: null,
+  check: function () {
+    if (State.status === Access.lastStatus) return;
+    Access.lastStatus = State.status;
+    Access.listeners.forEach(function (fn) { fn(); });
+  }
+};
+
 /* ---------- Popups: toast, dialog, bottom sheet ---------- */
 
 var UI = (function () {
@@ -259,9 +285,11 @@ var Router = (function () {
   var nav = null;
   var APP_TITLE = APP_NAME;
 
-  // register(name, build, { auth: 'login' | 'approved', only: 'pending' | 'rejected' | ... })
+  // register(name, build, { auth: 'login' | 'browse' | 'member' | 'approved', only: 'pending' | 'rejected' | ... })
+  // 'browse' = canUse('browse'); 'member' = pending or approved; 'approved' = only members the admin approved
   // build(param) returns { el, tab, leave(), mounted() }
   function register(name, build, options) {
+    if (routes[name]) console.error('Router: the route "' + name + '" is registered twice. The second one replaces the first.');
     routes[name] = { build: build, auth: (options && options.auth) || null, only: (options && options.only) || null };
   }
 
@@ -279,14 +307,25 @@ var Router = (function () {
   // Where the app should be for the current login and profile status.
   function gateName() {
     if (!State.loggedIn) return 'phone';
+    if (State.status === 'blocked') return 'blocked';
+    if (State.status === 'rejected') return 'rejected';
     if (State.status === 'approved' && State.approvalPending) return 'approved'; // show the congratulations once
-    var map = { none: 'choice', pending: 'pending', approved: 'home', rejected: 'rejected', blocked: 'blocked' };
-    return map[State.status] || 'phone';
+    return 'home'; // pending, approved and new members can browse; approval unlocks the actions
+  }
+
+  // The status screen that matches a status, used when the admin changes it while that screen is open.
+  function statusScreen(status) {
+    if (status === 'approved') return State.approvalPending ? 'approved' : 'home';
+    if (status === 'pending' || status === 'rejected' || status === 'blocked') return status;
+    return 'home';
   }
 
   function allowed(route) {
     if (route.only && State.status !== route.only) return false; // a status screen only for that status
+    if (State.loggedIn && State.status === 'blocked' && route.auth) return false; // blocked: the Blocked screen only
     if (route.auth === 'approved') return State.status === 'approved';
+    if (route.auth === 'member') return State.status === 'pending' || State.status === 'approved'; // may edit the profile
+    if (route.auth === 'browse') return State.loggedIn && canUse('browse'); // rejected and blocked cannot browse
     if (route.auth === 'login') return State.loggedIn;
     return true;
   }
@@ -319,6 +358,7 @@ var Router = (function () {
 
   function render(dir) {
     if (window.Bridge) Bridge.sync(); // the admin may have changed this user's status
+    Access.check();
     var parsed = parse();
     var route = routes[parsed.name];
     if (!route) {
@@ -371,6 +411,7 @@ var Router = (function () {
       else button.removeAttribute('aria-current');
     });
 
+    if (typeof AccessUI !== 'undefined') AccessUI.update(view); // sticky "under review" banner
     document.title = (view.title ? view.title + ' · ' : '') + APP_TITLE;
     var heading = el.querySelector('h1');
     if (heading) {
@@ -385,13 +426,14 @@ var Router = (function () {
     if (!window.Bridge || !stage) return;
     var before = State.status;
     Bridge.sync();
+    Access.check();
     var route = routes[parse().name];
     if (!route) return;
     if (State.loggedIn && before === 'pending' && State.status === 'approved') {
       UI.toast('Your profile was approved!');
       replace('approved');
     } else if (!allowed(route)) {
-      replace(gateName());
+      replace(route.only && State.loggedIn ? statusScreen(State.status) : gateName());
     }
   }
 

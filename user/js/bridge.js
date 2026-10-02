@@ -94,7 +94,15 @@ var Bridge = (function () {
       profileCode: 'SV' + (100000 + (seed % 900000)), hasBiodata: Boolean(p.biodataFile)
     };
     var out = Object.assign(defaults, p);
-    if (!out.photos || !out.photos.length) out.photos = [GENDER_ART[out.gender === 'female' ? 'female' : 'male']];
+    // The admin's built-in sample photos are emoji tiles. Show the illustrated people instead; real uploads pass through.
+    var placeholder = !out.photos || !out.photos.length || out.photos.every(function (src) { return /^data:image\/svg\+xml;base64,/.test(src); });
+    if (placeholder) {
+      var female = out.gender === 'female';
+      out.photos = makePhotoSet({
+        gender: out.gender === 'female' ? 'female' : 'male', skin: seed % 4,
+        hair: female ? ['long', 'bob', 'bun', 'braid'][seed % 4] : ['short', 'side', 'curly'][seed % 3], hairColor: seed % 3
+      }, seed);
+    }
     return out;
   }
 
@@ -197,12 +205,16 @@ var Bridge = (function () {
     return user;
   }
 
-  function writeSession(userId) { safeSetItem(KEY.session, { userId: userId, loggedInAt: nowIso() }); }
+  function writeSession(userId, phone) { safeSetItem(KEY.session, { userId: userId, phone: phone || State.phone, loggedInAt: nowIso() }); }
 
   function restore() {
     var session = safeGetItem(KEY.session, null);
     var user = session && session.userId ? findUser(session.userId) : null;
-    return user ? applyUser(user) : null;
+    if (user) return applyUser(user);
+    if (session && !session.userId && session.phone) { // signed in but has not created a profile yet
+      State.loggedIn = true; State.userId = null; State.phone = session.phone; State.status = 'none';
+    }
+    return null;
   }
 
   // After OTP: an existing phone number signs in to its account, a new one starts the profile.
@@ -214,6 +226,7 @@ var Bridge = (function () {
     State.loggedIn = true;
     State.userId = null;
     State.status = 'none';
+    writeSession(null, phone); // stay signed in across a refresh even before a profile exists
     return null;
   }
 

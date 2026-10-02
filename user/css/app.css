@@ -537,3 +537,48 @@ input[type=range] { width: 100%; height: 32px; margin: 4px 0; accent-color: var(
 
 .fixed-community { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding: 12px 16px; background: var(--maroon-tint); border: 1px solid #E8C5C0; border-radius: 14px; color: var(--maroon); }
 .fixed-community strong { font-size: 18px; }
+
+.status-banner { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 14px; background: var(--gold-tint); border-color: #EBD3A1; }
+.status-banner strong { font-size: 17px; }
+.status-banner .btn { margin-top: 4px; }
+
+.range-row { display: flex; align-items: center; gap: 12px; }
+.range-row span { flex: 0 0 48px; color: var(--text-soft); }
+.range-row input { flex: 1; min-width: 0; }
+
+.photo-slot .remove { top: 2px; right: 2px; width: 44px; height: 44px; background: rgba(46, 31, 26, 0.55); }
+.consent-row { font-weight: 400; }
+
+/* =====================================================================
+   Access levels: sticky banner, locked buttons, parent switch, limit note
+   ===================================================================== */
+
+.access-banner { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 16px; background: var(--gold-tint); border-bottom: 1px solid #EBD3A1; color: #5E4310; z-index: 5; }
+.access-banner .ab-text { flex: 1; min-width: 0; font-size: 14px; line-height: 1.35; }
+.access-banner .ab-link { flex: 0 0 auto; min-height: 44px; padding: 6px 12px; background: var(--maroon); border: 0; border-radius: 999px; color: #fff; font: 600 14px var(--font-body); cursor: pointer; white-space: nowrap; }
+
+/* Locked = still visible and tappable (it explains why), but greyed with a small padlock */
+.is-locked { opacity: 0.62; filter: grayscale(0.55); }
+.heart-btn .lock-mark { display: none; position: absolute; right: -3px; bottom: -3px; width: 22px; height: 22px; border: 2px solid var(--ivory); align-items: center; justify-content: center; border-radius: 50%; background: var(--text-soft); color: #fff; }
+.heart-btn .lock-mark svg { width: 13px; height: 13px; fill: none; stroke: #fff; stroke-width: 2.4; }
+.heart-btn.is-locked .lock-mark { display: flex; }
+.heart-btn.is-locked .icon svg { stroke: var(--text-soft); }
+.heart-btn.on.is-locked .icon svg { fill: var(--text-soft); }
+.menu-row.is-locked { color: var(--text-soft); }
+.menu-row .icon:last-child { margin-left: auto; }
+
+/* Parent and guardian view */
+.browse-bar { display: flex; flex-direction: column; gap: 8px; margin: 0 0 14px; }
+.for-chip { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 8px 14px; background: var(--maroon-tint); border: 1px solid #E8C5C0; border-radius: 999px; color: var(--maroon); font: 600 15px var(--font-body); text-align: left; cursor: pointer; }
+.for-chip > span:not(.icon) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.for-chip > .icon { flex: 0 0 auto; }
+.browse-row { display: flex; align-items: center; gap: 10px; }
+.browse-label { flex: 0 0 auto; color: var(--text-soft); font-weight: 500; }
+.browse-seg { flex: 1; }
+.browse-help { margin: 0; color: var(--text-soft); font-size: 14px; }
+
+.limit-note { display: flex; align-items: center; gap: 10px; margin-top: 4px; color: var(--text-soft); background: var(--gold-tint); border-color: #EBD3A1; }
+.limit-note .icon { color: #A27A1E; }
+.heart-btn.is-locked .lock-mark svg, .heart-btn.on.is-locked .lock-mark svg { stroke: #fff; fill: none; }
+@media (max-width: 380px) { .h-scroll { margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; } }
+.for-chip { font-size: 14px; }

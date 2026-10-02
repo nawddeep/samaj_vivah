@@ -66,7 +66,7 @@ var OPTIONS = {
     { value: 'interest', label: 'Only after I accept interest', sub: 'Photos stay hidden until I accept an interest.' }
   ],
   idTypes: ['Aadhaar', 'PAN', 'Driving licence'],
-  sampleFiles: ['biodata_rahul_lalwani.pdf', 'biodata_scan_page1.jpg', 'family_biodata_2026.pdf'],
+  sampleFiles: ['My_Biodata.pdf', 'Biodata_scan_page1.jpg', 'Family_biodata_2026.pdf'],
   sampleIdFiles: ['aadhaar_front.jpg', 'pan_card.jpg', 'driving_licence.pdf'],
   sampleKundali: ['kundali_rahul.pdf', 'janam_patri.jpg']
 };
@@ -325,7 +325,7 @@ function sampleProfile() {
     fatherOcc: 'Business', motherOcc: 'Homemaker', brothers: 0, sisters: 1, familyType: 'Nuclear', familyValues: 'Moderate',
     familyIncome: '10-20 LPA', nativePlace: 'Jaipur',
     about: 'I am a software engineer based in Pune. I value family, honesty and a simple life. I enjoy cricket, travelling and music. I am looking for a kind, educated and understanding partner to build a happy home together.',
-    photos: [set[0], set[1], set[2]], photoPrivacy: 'approved', biodataFile: 'biodata_rahul_lalwani.pdf', idType: 'Aadhaar', idFile: 'aadhaar_front.jpg'
+    photos: [set[0], set[1], set[2]], photoPrivacy: 'approved', biodataFile: 'My_Biodata.pdf', idType: 'Aadhaar', idFile: 'aadhaar_front.jpg'
   });
   p.prefs = {
     ageMin: 23, ageMax: 28, heightMin: 60, heightMax: 68,

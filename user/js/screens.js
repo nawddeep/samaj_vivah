@@ -76,7 +76,7 @@ function showErrors(root, errors) {
     if (!first) first = node.parentNode;
   });
   if (first) {
-    first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    first.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); // nearest keeps the question heading in view
     var control = first.querySelector('input, select, button, textarea');
     if (control) control.focus({ preventScroll: true });
   }
@@ -797,7 +797,11 @@ function rangeBlock(label, prefs, minKey, maxKey, lo, hi, format) {
     paint();
   });
   paint();
-  return h('div', { class: 'field' }, [line, minInput, maxInput]);
+  return h('div', { class: 'field' }, [
+    line,
+    h('label', { class: 'range-row' }, [h('span', { text: 'From' }), minInput]),
+    h('label', { class: 'range-row' }, [h('span', { text: 'To' }), maxInput])
+  ]);
 }
 
 registerStep('partner', {
@@ -1007,7 +1011,7 @@ Router.register('welcome', function () {
 /* ---------- 3. Mobile number ---------- */
 Router.register('phone', function () {
   var timer = null;
-  var input = h('input', { class: 'input', id: 'phone-input', type: 'tel', inputmode: 'numeric', maxlength: '10', placeholder: '10-digit mobile number', autocomplete: 'tel-national', 'aria-label': 'Mobile number' });
+  var input = h('input', { class: 'input', id: 'phone-input', type: 'tel', inputmode: 'numeric', placeholder: 'Mobile number', autocomplete: 'tel-national', 'aria-label': 'Mobile number' });
   var clearBtn = h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Clear number' }, Icon('close'));
   var flag = h('span', { class: 'icon' });
   flag.innerHTML = INDIA_FLAG;
@@ -1020,8 +1024,11 @@ Router.register('phone', function () {
 
   input.value = State.phone;
   function paintClear() { clearBtn.hidden = !input.value; }
+  // Keeps only digits, so a pasted "+91 98765 43210" or "098765 43210" still becomes the 10-digit number.
   input.addEventListener('input', function () {
-    input.value = input.value.replace(/\D/g, '');
+    var digits = input.value.replace(/\D/g, '');
+    if (digits.length > 10) digits = digits.replace(/^(91|0)/, '');
+    input.value = digits.slice(0, 10);
     State.phone = input.value;
     paintClear();
   });
@@ -1274,8 +1281,9 @@ Router.register('review', function () {
         UI.toast('Could not save. Your browser storage is full or blocked.', 'error');
         return;
       }
+      State.consent = false; // each submission needs a fresh confirmation
       UI.toast('Profile submitted for approval');
-      Router.replace('pending');
+      Router.replace('home'); // browse while waiting; the banner links to the status page
     }, 1000);
   }
 
@@ -1295,9 +1303,17 @@ Router.register('review', function () {
    PART 2A: SHARED HELPERS FOR THE MAIN APP
    ===================================================================== */
 
-function seeking() { return State.profile.gender === 'male' ? 'female' : 'male'; }
+function isFull() { return State.status === 'approved'; }
+
+/* ---------- Who the member is browsing for. Parents and guardians can switch between Brides, Grooms and All ---------- */
+function isParent() { return State.status !== 'none' && Boolean(State.profile.profileFor) && State.profile.profileFor !== 'Myself'; }
+function forName() { return (State.profile.firstName || 'your family member') + ' (' + State.profile.profileFor + ')'; }
+// Default is the opposite of the person the profile is for. Someone with no profile yet sees everyone.
+function defaultShowGender() { var g = State.profile.gender; return g === 'male' ? 'female' : g === 'female' ? 'male' : 'all'; }
+function showGenderMode() { return isParent() && State.app && State.app.showGender ? State.app.showGender : defaultShowGender(); }
+function browseGender() { var mode = showGenderMode(); return mode === 'all' ? null : mode; }
 // Only profiles the admin published, of the other gender. Draft and hidden profiles never appear.
-function oppositeProfiles() { return Bridge.publishedProfiles().filter(function (p) { return p.gender === seeking() && p.userId !== State.userId; }); }
+function oppositeProfiles() { return Bridge.publishedProfiles().filter(function (p) { var wanted = browseGender(); return (!wanted || p.gender === wanted) && p.userId !== State.userId; }); }
 function myName() { return (State.profile.firstName + ' ' + State.profile.lastName).trim() || 'Member'; }
 function myAge() { return calcAge(State.profile.dobDay, State.profile.dobMonth, State.profile.dobYear) || 28; }
 
@@ -1316,16 +1332,26 @@ var FILTER_FIELDS = [
 // Everything the signed-in member does after approval lives here (in memory only).
 function appState() {
   if (!State.app) {
-    var o = oppositeProfiles();
     State.app = {
       shortlist: Bridge.loadShortlist(State.userId).filter(function (id) { return Bridge.publishedProfile(id); }),
-      viewed: [2, 5, 8].map(function (i) { return o[i]; }).filter(Boolean).map(function (p) { return p.id; }), blocked: [], hidden: [], passed: [],
+      viewed: [], blocked: [], hidden: [], passed: [],
       filters: blankFilters(), search: '', sort: 'best', view: 'list', page: 1, focusSearch: false, savedSearch: false,
-      notifications: NOTIFICATIONS.map(function (n) { return Object.assign({}, n); }),
-      interests: INTERESTS.filter(function (i) { return o[i.slot]; }).map(function (i) { return { id: i.id, profileId: o[i.slot].id, dir: i.dir, status: i.status, time: i.time }; })
+      notifications: [], interests: [], demoSeeded: false
     };
   }
+  seedDemoActivity(State.app);
   return State.app;
+}
+
+// The made-up interests, notifications and "recently viewed" only exist for approved members.
+// Someone who is just browsing, or waiting for approval, has no activity yet.
+function seedDemoActivity(a) {
+  if (a.demoSeeded || !isFull()) return;
+  var o = oppositeProfiles();
+  a.demoSeeded = true;
+  a.viewed = [2, 5, 8].map(function (i) { return o[i]; }).filter(Boolean).map(function (p) { return p.id; }).concat(a.viewed);
+  a.notifications = NOTIFICATIONS.map(function (n) { return Object.assign({}, n); });
+  a.interests = INTERESTS.filter(function (i) { return o[i.slot]; }).map(function (i) { return { id: i.id, profileId: o[i.slot].id, dir: i.dir, status: i.status, time: i.time }; });
 }
 
 function visibleProfiles() {
@@ -1357,10 +1383,11 @@ function toggleShortlist(id) {
 }
 
 function heartButton(p, large) {
-  var button = h('button', { type: 'button', class: 'heart-btn' + (large ? ' large' : '') }, Icon('heart'));
+  var button = h('button', { type: 'button', class: 'heart-btn' + (large ? ' large' : '') }, [Icon('heart'), lockMark()]);
   button.addEventListener('click', function (event) {
     event.preventDefault();
     event.stopPropagation();
+    if (!allow('shortlist')) return;
     var saved = toggleShortlist(p.id);
     if (saved) { button.classList.add('pop'); setTimeout(function () { button.classList.remove('pop'); }, 450); }
     UI.toast(saved ? 'Added to shortlist' : 'Removed from shortlist', saved ? 'success' : 'info');
@@ -1370,6 +1397,9 @@ function heartButton(p, large) {
     button.classList.toggle('on', on);
     button.setAttribute('aria-pressed', on ? 'true' : 'false');
     button.setAttribute('aria-label', (on ? 'Remove ' : 'Add ') + p.name + (on ? ' from' : ' to') + ' shortlist');
+    var locked = !canUse('shortlist');
+    button.classList.toggle('is-locked', locked);
+    button.setAttribute('aria-disabled', locked ? 'true' : 'false');
   });
   return button;
 }
@@ -1379,6 +1409,7 @@ function interestSent(id) {
 }
 
 function sendInterest(p) {
+  if (!allow('sendInterest')) return;
   if (interestSent(p.id)) { UI.toast('You already sent an interest to ' + p.firstName + '.', 'info'); return; }
   appState().interests.unshift({ id: uid('int'), profileId: p.id, dir: 'sent', status: 'pending', time: 'Just now' });
   repaintBound();
@@ -1390,11 +1421,29 @@ function interestButton(p, extraClass) {
   button.addEventListener('click', function (event) { event.preventDefault(); event.stopPropagation(); sendInterest(p); });
   bindPaint(button, function () {
     var sent = interestSent(p.id);
+    var locked = !canUse('sendInterest');
     clearNode(button);
-    button.appendChild(Icon(sent ? 'check' : 'send', 20));
+    button.appendChild(Icon(sent ? 'check' : locked ? 'lock' : 'send', 20));
     button.appendChild(document.createTextNode(sent ? 'Interest sent' : 'Send interest'));
     button.classList.toggle('btn-outline', sent);
     button.classList.toggle('btn-primary', !sent);
+    button.classList.toggle('is-locked', locked && !sent);
+    button.setAttribute('aria-disabled', locked && !sent ? 'true' : 'false');
+  });
+  return button;
+}
+
+// "Show contact" button: visible to everyone, greyed with a padlock until the profile is approved.
+function contactButton(p, onRevealed) {
+  var button = h('button', { type: 'button', class: 'btn btn-outline btn-small action-main' });
+  button.addEventListener('click', function () { revealContact(p, onRevealed); });
+  bindPaint(button, function () {
+    var locked = !canUse('viewContact');
+    clearNode(button);
+    if (locked) button.appendChild(Icon('lock', 18));
+    button.appendChild(document.createTextNode('Show contact'));
+    button.classList.toggle('is-locked', locked);
+    button.setAttribute('aria-disabled', locked ? 'true' : 'false');
   });
   return button;
 }
@@ -1402,6 +1451,93 @@ function interestButton(p, extraClass) {
 function verifiedBadge() { return h('span', { class: 'badge-verified' }, [Icon('verified', 14), 'Verified']); }
 
 function openProfile(id) { Router.go('profile', id); }
+
+// Every locked button calls allow('action'). If the member's status may not use it, a friendly popup explains why.
+function allow(action) {
+  if (canUse(action)) return true;
+  showLocked();
+  return false;
+}
+
+function showLocked() {
+  if (State.status === 'none') {
+    UI.dialog({
+      title: 'Create your profile first', dismissValue: false,
+      body: 'You can browse the profiles. To send interests, message or see contact details, fill in your profile. Once the admin approves it, everything unlocks.',
+      actions: [{ label: 'Create profile', value: true, kind: 'primary', autofocus: true }, { label: 'Not now', value: false, kind: 'outline' }]
+    }).then(function (go) { if (go) Router.go('choice'); });
+    return;
+  }
+  UI.dialog({
+    title: 'Locked for now', dismissValue: false,
+    body: 'Available after your profile is approved. Usually within 24 hours.',
+    actions: [{ label: 'OK', value: false, kind: 'primary', autofocus: true }, { label: 'View status', value: true, kind: 'outline' }]
+  }).then(function (go) { if (go) Router.go('pending'); });
+}
+
+// Small padlock shown on a locked button (only visible while the button has the is-locked class).
+function lockMark() { return h('span', { class: 'lock-mark', 'aria-hidden': 'true' }, Icon('lock', 12)); }
+
+// Whole-screen version for tabs that are only for approved members.
+function lockedView(title, tab) {
+  var message = State.status === 'none'
+    ? 'Create your profile to unlock this. You can still browse the profiles.'
+    : 'Available after your profile is approved. Usually within 24 hours.';
+  var cta = State.status === 'none' ? ['Create profile', 'choice'] : ['View status', 'pending'];
+  var screen = Screen({ back: !tab, body: [h('h1', { class: 'q-title tight', text: title }), emptyBlock('lock', 'Locked for now', message, cta[0], function () { Router.go(cta[1]); })] });
+  return { el: screen.el, tab: tab, title: title };
+}
+
+// Sticky banner above every main screen while the profile is under review (or not created yet).
+var AccessUI = (function () {
+  var currentView = null;
+  function render() {
+    var box = document.getElementById('access-banner');
+    var wanted = currentView && (currentView.tab || currentView.banner) && State.loggedIn && (State.status === 'pending' || State.status === 'none');
+    box.hidden = !wanted;
+    if (!wanted) return;
+    clearNode(box);
+    var pending = State.status === 'pending';
+    box.appendChild(h('span', { class: 'ab-text', text: pending
+      ? 'Your profile is under review. You can browse now. Messaging and contact unlock after approval.'
+      : 'You are browsing as a guest. Create your profile to send interests and message after approval.' }));
+    box.appendChild(h('button', { type: 'button', class: 'ab-link', text: pending ? 'View status' : 'Create profile', onClick: function () { Router.go(pending ? 'pending' : 'choice'); } }));
+  }
+  // The moment the status changes (for example "Simulate approval"), the banner goes and every locked button opens up.
+  Access.listeners.push(function () { render(); repaintBound(); });
+  return { update: function (view) { currentView = view; render(); } };
+})();
+
+// "Showing: Brides | Grooms | All" for parents and guardians, with a chip that opens the profile they manage.
+function browseBar(onChange) {
+  if (!isParent()) return null;
+  var a = appState();
+  var options = [['female', 'Brides'], ['male', 'Grooms'], ['all', 'All']];
+  var chip = h('button', { type: 'button', class: 'for-chip', onClick: function () { Router.go('myprofile'); } }, [
+    Icon('user', 18), h('span', { text: 'Managing profile for ' + forName() }), Icon('right', 16)
+  ]);
+  var seg = h('div', { class: 'segmented browse-seg', role: 'radiogroup', 'aria-label': 'Showing' });
+  var buttons = options.map(function (o) {
+    var b = h('button', { type: 'button', role: 'radio', text: o[1] });
+    b.addEventListener('click', function () { a.showGender = o[0]; a.page = 1; paint(); onChange(); });
+    seg.appendChild(b);
+    return b;
+  });
+  function paint() {
+    var mode = a.showGender || defaultShowGender();
+    buttons.forEach(function (b, i) {
+      var on = options[i][0] === mode;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+  }
+  paint();
+  return h('div', { class: 'browse-bar' }, [
+    chip,
+    h('div', { class: 'browse-row' }, [h('span', { class: 'browse-label', text: 'Showing:' }), seg]),
+    h('p', { class: 'browse-help', text: 'You are browsing for ' + forName() })
+  ]);
+}
 
 // Short loading skeleton, then the real list.
 function loadList(container, render, ms) {
@@ -1554,6 +1690,7 @@ Router.register('pending', function () {
   }
 
   var el = Screen({
+    back: true,
     body: [
       h('div', { class: 'status-hero' }, [
         statusIcon('hourglass', 'spin-slow'),
@@ -1572,6 +1709,7 @@ Router.register('pending', function () {
         h('button', { type: 'button', class: 'btn btn-outline btn-block', text: 'Simulate rejection', onClick: simulate('rejected', 'rejected', 'Profile rejected') }),
         h('button', { type: 'button', class: 'btn btn-outline btn-block', text: 'Simulate block', onClick: simulate('blocked', 'blocked', 'Account blocked') })
       ]),
+      h('button', { type: 'button', class: 'btn btn-outline btn-block', style: 'margin-top:12px', text: 'Browse profiles', onClick: function () { Router.go('home'); } }),
       h('button', { type: 'button', class: 'link-btn block-link', text: 'Log out', onClick: logout })
     ]
   });
@@ -1645,7 +1783,7 @@ Router.register('blocked', function () {
    PART 2C: PROFILE CARDS, NOTIFICATIONS, HOME
    ===================================================================== */
 
-function compatBadge(p) { return h('span', { class: 'compat-badge', text: p.compat + '% match' }); }
+function compatBadge(p) { return State.status === 'none' ? null : h('span', { class: 'compat-badge', text: p.compat + '% match' }); }
 
 // Small card used in the horizontal rows on Home.
 function miniCard(p) {
@@ -1692,6 +1830,7 @@ function notificationText(n) {
 function unreadCount() { return appState().notifications.filter(function (n) { return !n.read; }).length; }
 
 Router.register('notifications', function () {
+  if (!isFull()) return lockedView('Notifications', null);
   var a = appState();
   var list = h('div', { class: 'notif-list' });
   var markAll = h('button', { type: 'button', class: 'link-btn', text: 'Mark all read' });
@@ -1722,7 +1861,7 @@ Router.register('notifications', function () {
   var screen = Screen({ back: true, right: markAll, body: [h('h1', { class: 'q-title', text: 'Notifications' }), list] });
   loadList(list, paint, 500);
   return { el: screen.el, title: 'Notifications' };
-}, { auth: 'approved' });
+}, { auth: 'browse' });
 
 /* ---------- 27. Home ---------- */
 
@@ -1741,8 +1880,8 @@ function homeSections() {
     { title: 'New matches', list: all.slice().reverse().slice(0, 6) },
     { title: 'Nearby matches', list: nearby.slice(0, 6) },
     { title: 'Recently viewed', list: byId(a.viewed).slice(0, 6) },
-    { title: 'Shortlisted you', list: slots([3, 6, 9]) },
-    { title: 'Viewed your profile', list: slots([1, 4, 7]) }
+    { title: 'Shortlisted you', list: isFull() ? slots([3, 6, 9]) : [] },
+    { title: 'Viewed your profile', list: isFull() ? slots([1, 4, 7]) : [] }
   ];
 }
 
@@ -1769,7 +1908,7 @@ Router.register('home', function () {
   var host = h('div');
   var percent = completionPercent();
   var bell = h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Notifications', onClick: function () { Router.go('notifications'); } }, [Icon('bell')]);
-  if (unreadCount()) bell.appendChild(h('span', { class: 'notif-dot', 'aria-label': unreadCount() + ' unread' }));
+  if (isFull() && unreadCount()) bell.appendChild(h('span', { class: 'notif-dot', 'aria-label': unreadCount() + ' unread' }));
   var searchBtn = h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Search matches', onClick: function () { a.focusSearch = true; Router.go('matches', '', 'fade'); } }, Icon('search'));
 
   var header = h('div', { class: 'home-header' }, [
@@ -1779,11 +1918,17 @@ Router.register('home', function () {
     searchBtn, bell
   ]);
 
-  var banner = percent >= 100 ? null : h('button', { type: 'button', class: 'card banner-card', onClick: openCompletionTips }, [
-    h('span', { class: 'banner-top' }, [h('strong', { text: 'Your profile is ' + percent + '% complete' }), Icon('right')]),
-    h('span', { class: 'progress' }, h('span', { class: 'progress-fill', style: 'width:' + percent + '%' })),
-    h('span', { class: 'muted', text: 'Complete it to get more interest.' })
-  ]);
+  function statusBanner() {
+    if (isFull()) {
+      return percent >= 100 ? null : h('button', { type: 'button', class: 'card banner-card', onClick: openCompletionTips }, [
+        h('span', { class: 'banner-top' }, [h('strong', { text: 'Your profile is ' + percent + '% complete' }), Icon('right')]),
+        h('span', { class: 'progress' }, h('span', { class: 'progress-fill', style: 'width:' + percent + '%' })),
+        h('span', { class: 'muted', text: 'Complete it to get more interest.' })
+      ]);
+    }
+    return null; // pending members and guests get the sticky banner above the screen instead
+  }
+  var banner = statusBanner();
 
   var idInput = h('input', { class: 'input', id: 'id-search', type: 'search', placeholder: 'Search by Profile ID', 'aria-label': 'Search by Profile ID', autocomplete: 'off' });
   function searchById() {
@@ -1794,7 +1939,8 @@ Router.register('home', function () {
     openProfile(found.id);
   }
   idInput.addEventListener('keydown', function (event) { if (event.key === 'Enter') searchById(); });
-  var idRow = h('div', { class: 'id-search' }, [idInput, h('button', { type: 'button', class: 'btn btn-primary btn-small', text: 'Find', onClick: searchById })]);
+  // Profile IDs are hidden until approved, so the ID search is for approved members only.
+  var idRow = isFull() ? h('div', { class: 'id-search' }, [idInput, h('button', { type: 'button', class: 'btn btn-primary btn-small', text: 'Find', onClick: searchById })]) : null;
 
   function renderSections() {
     var shown = 0;
@@ -1810,11 +1956,11 @@ Router.register('home', function () {
     if (!shown) host.appendChild(emptyBlock('users', 'No matches yet', 'Check back soon. New profiles are added every day.'));
   }
 
-  var screen = Screen({ body: [banner, idRow, host], className: 'with-home-header' });
+  var screen = Screen({ body: [browseBar(function () { loadList(host, renderSections, 350); }), banner, idRow, host], className: 'with-home-header' });
   screen.el.insertBefore(header, screen.el.firstChild);
   loadList(host, renderSections, 500);
   return { el: screen.el, tab: 'home', title: 'Home' };
-}, { auth: 'approved' });
+}, { auth: 'browse' });
 
 /* =====================================================================
    PART 2D: MATCHES, SORTING, FILTERS (screens 28 and 29)
@@ -1912,6 +2058,11 @@ function openFilterSheet(onApply) {
 }
 
 var PAGE_SIZE = 6;
+var PENDING_LIMIT = 20; // demo: members under review see at most 20 profiles
+
+function limitNote() {
+  return h('div', { class: 'card limit-note' }, [Icon('lock'), h('span', { text: 'Approved members can browse all profiles' })]);
+}
 var SORT_OPTIONS = [['new', 'Newest'], ['best', 'Best match'], ['age', 'Age'], ['nearby', 'Nearby']];
 
 Router.register('matches', function () {
@@ -1964,6 +2115,8 @@ Router.register('matches', function () {
     shown.forEach(function (p) { results.appendChild(listCard(p)); });
     if (shown.length < list.length) {
       results.appendChild(h('button', { type: 'button', class: 'btn btn-outline btn-block', text: 'Load more', onClick: function () { a.page += 1; refresh(true); } }));
+    } else if (!canUse('viewContact')) {
+      results.appendChild(limitNote()); // end of what a member under review can see
     }
   }
 
@@ -1972,7 +2125,7 @@ Router.register('matches', function () {
     var deck = list.filter(function (p) { return a.passed.indexOf(p.id) === -1; });
     countLine.textContent = deck.length + ' left to see';
     if (!deck.length) {
-      results.appendChild(emptyBlock('check', 'You have seen everyone', 'Come back later for new matches.', 'Start again', function () { a.passed = []; refresh(); }));
+      results.appendChild(emptyBlock('check', 'You have seen everyone', canUse('viewContact') ? 'Come back later for new matches.' : 'Approved members can browse all profiles.', 'Start again', function () { a.passed = []; refresh(); }));
       return;
     }
     var p = deck[0];
@@ -1985,6 +2138,7 @@ Router.register('matches', function () {
       ])
     ]);
     function advance(kind) {
+      if (kind === 'interest' && !allow('sendInterest')) { card.style.transform = ''; return; }
       card.classList.add(kind === 'interest' ? 'fly-right' : 'fly-left');
       setTimeout(function () {
         if (kind === 'interest') sendInterest(p);
@@ -2032,6 +2186,7 @@ Router.register('matches', function () {
     listBtn.setAttribute('aria-pressed', a.view === 'list' ? 'true' : 'false');
     cardBtn.setAttribute('aria-pressed', a.view === 'card' ? 'true' : 'false');
     var list = filtered();
+    if (!canUse('viewContact')) list = list.slice(0, PENDING_LIMIT);
     var render = function () { if (a.view === 'card') renderDeck(list); else renderList(list); };
     if (skipLoading) { clearNode(results); render(); } else loadList(results, render, 500);
   }
@@ -2042,11 +2197,12 @@ Router.register('matches', function () {
   listBtn.addEventListener('click', function () { a.view = 'list'; refresh(true); });
   cardBtn.addEventListener('click', function () { a.view = 'card'; refresh(true); });
 
-  var shortlistBtn = h('button', { type: 'button', class: 'icon-btn gold-heart', 'aria-label': 'Open shortlist', onClick: function () { Router.go('shortlist'); } }, Icon('heart'));
+  var shortlistBtn = h('button', { type: 'button', class: 'icon-btn gold-heart', 'aria-label': 'Open shortlist', onClick: function () { if (allow('shortlist')) Router.go('shortlist'); } }, Icon('heart'));
   var screen = Screen({
     right: h('div', { class: 'header-right' }, [shortlistBtn, viewToggle]),
     body: [
       h('h1', { class: 'q-title tight', text: 'Matches' }),
+      browseBar(function () { a.page = 1; refresh(); }),
       h('div', { class: 'field search-field' }, search),
       h('div', { class: 'toolbar' }, [filterBtn, sort]),
       chipsBox, countLine, results
@@ -2057,7 +2213,7 @@ Router.register('matches', function () {
     el: screen.el, tab: 'matches', title: 'Matches',
     mounted: function () { if (a.focusSearch) { a.focusSearch = false; search.focus(); } }
   };
-}, { auth: 'approved' });
+}, { auth: 'browse' });
 
 /* =====================================================================
    PART 2E: PROFILE DETAIL (screen 30) AND CONTACT REVEAL
@@ -2085,7 +2241,8 @@ function preferenceMatches(p) {
 }
 
 function watermarkLayer() {
-  var text = myName();
+  // Name and last 4 digits of the viewer's phone, so a leaked screenshot can be traced.
+  var text = (State.profile.firstName ? myName() : 'Guest') + ' \u2022 ' + String(State.phone || '').slice(-4);
   var spans = [];
   for (var i = 0; i < 90; i++) spans.push(h('span', { text: text }));
   return h('div', { class: 'watermark', 'aria-hidden': 'true' }, h('div', { class: 'watermark-inner' }, spans));
@@ -2133,6 +2290,7 @@ function showNumberDialog(p) {
 
 // The number stays masked until the member confirms the popup.
 function revealContact(p, onRevealed) {
+  if (!allow('viewContact')) return;
   var a = appState();
   a.revealed = a.revealed || [];
   if (a.revealed.indexOf(p.id) !== -1) { showNumberDialog(p); return; }
@@ -2149,14 +2307,18 @@ function openMoreMenu(p) {
   UI.sheet({
     title: 'More options', dismissValue: null,
     render: function (close) {
-      function row(icon, label, action, danger) {
-        return h('button', { type: 'button', class: 'menu-row' + (danger ? ' danger' : ''), onClick: function () { close(null); action(); } }, [Icon(icon), h('span', { text: label })]);
+      function row(icon, label, action, danger, needs) {
+        var locked = needs && !canUse(needs);
+        return h('button', {
+          type: 'button', class: 'menu-row' + (danger ? ' danger' : '') + (locked ? ' is-locked' : ''), 'aria-disabled': locked ? 'true' : false,
+          onClick: function () { if (needs && !allow(needs)) return; close(null); action(); }
+        }, [Icon(icon), h('span', { text: label }), locked ? Icon('lock', 16) : null]);
       }
       return {
         footer: null,
         body: h('div', {}, [
           row('share', 'Share profile', function () { copyText('https://samajvivah.example/profile/' + p.profileCode, 'Profile link copied'); }),
-          row('flag', 'Report profile', function () { openReport(p); }),
+          row('flag', 'Report profile', function () { openReport(p); }, false, 'report'),
           row('ban', 'Block this member', function () {
             UI.confirm({ title: 'Block ' + p.firstName + '?', message: 'You will no longer see this profile, and they will not see yours.', confirmText: 'Block', danger: true }).then(function (yes) {
               if (!yes) return;
@@ -2164,7 +2326,7 @@ function openMoreMenu(p) {
               UI.toast(p.firstName + ' has been blocked');
               Router.back('home');
             });
-          }, true),
+          }, true, 'report'),
           row('close', 'Not interested', function () {
             a.hidden.push(p.id);
             UI.toast('We will not show this profile again', 'info');
@@ -2221,13 +2383,15 @@ Router.register('profile', function (id) {
   if (a.viewed.indexOf(p.id) !== -1) a.viewed.splice(a.viewed.indexOf(p.id), 1);
   a.viewed.unshift(p.id);
   return profileView(p, false);
-}, { auth: 'approved' });
+}, { auth: 'browse' });
 
 // The member's own profile, exactly as other members see it.
 Router.register('myprofile', function () { return profileView(Bridge.ownPreview(), true); }, { auth: 'login' });
 
 function profileView(p, own) {
   var a = appState();
+  // Until approved, other members' contact, Profile ID and biodata file stay hidden.
+  var trusted = own || canUse('viewContact');
   var matches = preferenceMatches(p);
   var matched = matches.filter(function (m) { return m.ok; }).length;
   var ring = progressRing(p.compat, 70, 'Compatibility');
@@ -2237,7 +2401,7 @@ function profileView(p, own) {
 
   var sections = [
     ['about', 'About', h('section', { class: 'card info-card', id: 'sec-about' }, [h('h3', { text: 'About ' + p.firstName }), h('p', { text: p.about })])],
-    ['basic', 'Basic', infoCard('sec-basic', 'Basic details', [['Age', p.age + ' years'], ['Height', fmtHeight(p.heightIn) + ' (' + cmFromInches(p.heightIn) + ' cm)'], ['Marital status', p.maritalStatus], ['Profile ID', p.profileCode], ['Location', p.city + ', ' + p.state + ', ' + p.country]])],
+    ['basic', 'Basic', infoCard('sec-basic', 'Basic details', [['Age', p.age + ' years'], ['Height', fmtHeight(p.heightIn) + ' (' + cmFromInches(p.heightIn) + ' cm)'], ['Marital status', p.maritalStatus]].concat(trusted ? [['Profile ID', p.profileCode]] : [], [['Location', p.city + ', ' + p.state + ', ' + p.country]]))],
     ['community', 'Community', infoCard('sec-community', 'Community and horoscope', [['Community', 'Sindhi'], ['Religion', p.religion], ['Mother tongue', p.motherTongue], ['Manglik', p.manglik], ['Rashi', p.rashi], ['Nakshatra', p.nakshatra], ['Time of birth', p.birthTime], ['Place of birth', p.birthPlace]])],
     ['work', 'Education and work', infoCard('sec-work', 'Education and work', [['Qualification', p.education], ['College', p.college], ['Field of study', p.fieldOfStudy], ['Employment', p.employment], ['Profession', p.profession], ['Company', p.company], ['Annual income', p.income]])],
     ['lifestyle', 'Lifestyle', h('section', { class: 'card info-card', id: 'sec-lifestyle' }, [
@@ -2246,7 +2410,7 @@ function profileView(p, own) {
       h('div', { class: 'chips hobby-chips' }, p.hobbies.map(function (hobby) { return h('span', { class: 'chip static-chip', text: hobby }); }))
     ])],
     ['family', 'Family', infoCard('sec-family', 'Family', [['Father', p.fatherOcc], ['Mother', p.motherOcc], ['Brothers', String(p.brothers)], ['Sisters', String(p.sisters)], ['Family type', p.familyType], ['Family values', p.familyValues], ['Native place', p.nativePlace]])],
-    ['partner', 'Partner preferences', own ? infoCard('sec-partner', 'Your partner preferences', matches.map(function (m) { return [m.label, m.want]; })) : h('section', { class: 'card info-card', id: 'sec-partner' }, [
+    ['partner', 'Partner preferences', own || State.status === 'none' ? infoCard('sec-partner', own ? 'Your partner preferences' : 'Partner preferences', matches.map(function (m) { return [m.label, m.want]; })) : h('section', { class: 'card info-card', id: 'sec-partner' }, [
       h('h3', { text: 'Partner preferences' }),
       h('p', { class: 'match-line' }, [h('strong', { text: 'You match ' + matched + ' of ' + matches.length + ' preferences' })]),
       h('div', { class: 'match-bar', role: 'img', 'aria-label': matched + ' of ' + matches.length + ' preferences matched' }, h('span', { style: 'width:' + (matched / matches.length * 100) + '%' })),
@@ -2259,7 +2423,9 @@ function profileView(p, own) {
     ])],
     ['biodata', 'Biodata', h('section', { class: 'card info-card', id: 'sec-biodata' }, [
       h('h3', { text: 'Biodata' }),
-      p.hasBiodata
+      p.hasBiodata && !trusted
+        ? h('div', { class: 'info-note' }, [Icon('lock'), h('span', { text: 'The biodata file is available after your profile is approved.' })])
+        : p.hasBiodata
         ? h('div', { class: 'file-chip' }, [Icon('file'), h('span', { class: 'name', text: p.firstName.toLowerCase() + '_biodata.pdf' }), h('button', { type: 'button', class: 'btn btn-outline btn-small', text: 'View', onClick: function () { openBiodata(p); } })])
         : h('p', { class: 'muted', text: 'No biodata file has been uploaded.' })
     ])]
@@ -2278,7 +2444,7 @@ function profileView(p, own) {
   var content = h('div', { class: 'detail-content' }, [
     h('div', { class: 'detail-title' }, [
       h('div', {}, [h('h2', { text: p.name }), p.verified ? verifiedBadge() : null, h('p', { class: 'muted', text: p.lastActive })]),
-      own ? null : h('div', { class: 'compat-ring' }, [ring.node, h('span', { class: 'p-active', text: 'Compatibility' })])
+      own || State.status === 'none' ? null : h('div', { class: 'compat-ring' }, [ring.node, h('span', { class: 'p-active', text: 'Compatibility' })])
     ]),
     h('div', { class: 'quick-facts' }, [
       [p.age + ' yrs', 'Age'], [fmtHeight(p.heightIn), 'Height'], [p.city, 'Location'], [p.profession, 'Work']
@@ -2289,7 +2455,7 @@ function profileView(p, own) {
     s[2].id = 'sec-' + s[0];
     return s[2];
   })).concat([
-    h('section', { class: 'card info-card', id: 'sec-contact' }, [h('h3', { text: 'Contact' }), h('dl', { class: 'info-list' }, h('div', { class: 'info-row' }, [h('dt', { text: 'Mobile' }), contactLine]))])
+    trusted ? h('section', { class: 'card info-card', id: 'sec-contact' }, [h('h3', { text: 'Contact' }), h('dl', { class: 'info-list' }, h('div', { class: 'info-row' }, [h('dt', { text: 'Mobile' }), contactLine]))]) : null
   ]));
 
   var body = h('div', { class: 'screen-body detail-body' }, [buildGallery(p), content]);
@@ -2298,7 +2464,7 @@ function profileView(p, own) {
     : h('div', { class: 'action-bar' }, [
       heartButton(p, true),
       interestButton(p, 'btn-primary btn-small action-main'),
-      h('button', { type: 'button', class: 'btn btn-outline btn-small action-main', text: 'Show contact', onClick: function () { revealContact(p, paintContact); } })
+      contactButton(p, paintContact)
     ]);
   var header = h('div', { class: 'detail-header on-maroon' }, [
     h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Go back', onClick: function () { Router.back(own ? 'account' : 'matches'); } }, Icon('back')),
@@ -2306,7 +2472,7 @@ function profileView(p, own) {
     own ? h('span', { class: 'icon-btn', 'aria-hidden': 'true' }) : h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'More options', onClick: function () { openMoreMenu(p); } }, Icon('dots'))
   ]);
   var el = h('section', {}, [header, body, actions]);
-  return { el: el, title: p.name, mounted: ring.start };
+  return { el: el, title: p.name, banner: true, mounted: ring.start };
 }
 
 /* =====================================================================
@@ -2357,6 +2523,7 @@ function chatState() {
 }
 
 Router.register('interests', function () {
+  if (!isFull()) return lockedView('Interests', 'interests');
   var a = appState();
   var tab = a.interestTab || 'received';
   var tabsBox = h('div', { class: 'seg-tabs', role: 'tablist', 'aria-label': 'Interests' });
@@ -2398,6 +2565,7 @@ Router.register('interests', function () {
     var actions = h('div', { class: 'interest-actions' });
     if (tab === 'received') {
       actions.appendChild(h('button', { type: 'button', class: 'btn btn-primary btn-small', onClick: function () {
+        if (!allow('acceptInterest')) return;
         item.status = 'accepted'; item.time = 'Just now';
         UI.toast('You accepted ' + p.firstName + '’s interest');
         paintTabs(); renderList();
@@ -2408,7 +2576,7 @@ Router.register('interests', function () {
         paintTabs(); renderList();
       } }, [Icon('close', 20), 'Decline']));
     } else if (tab === 'accepted') {
-      actions.appendChild(h('button', { type: 'button', class: 'btn btn-primary btn-small btn-block', onClick: function () { ensureChat(p.id); Router.go('chat', p.id); } }, [Icon('chat', 20), 'Message']));
+      actions.appendChild(h('button', { type: 'button', class: 'btn btn-primary btn-small btn-block', onClick: function () { if (allow('chat')) { ensureChat(p.id); Router.go('chat', p.id); } } }, [Icon('chat', 20), 'Message']));
     } else if (tab === 'sent') {
       actions.appendChild(h('p', { class: 'muted status-note', text: 'Waiting for ' + p.firstName + ' to reply' }));
     } else {
@@ -2428,11 +2596,12 @@ Router.register('interests', function () {
   paintTabs();
   loadList(list, renderList, 500);
   return { el: screen.el, tab: 'interests', title: 'Interests' };
-}, { auth: 'approved' });
+}, { auth: 'browse' });
 
 /* ---------- 33. Shortlist ---------- */
 
 Router.register('shortlist', function () {
+  if (!isFull()) return lockedView('Shortlist', 'matches');
   var a = appState();
   var list = h('div');
 
@@ -2463,11 +2632,12 @@ Router.register('shortlist', function () {
   var screen = Screen({ back: true, body: [h('h1', { class: 'q-title tight', text: 'Shortlist' }), list] });
   loadList(list, renderList, 500);
   return { el: screen.el, tab: 'matches', title: 'Shortlist' };
-}, { auth: 'approved' });
+}, { auth: 'browse' });
 
 /* ---------- 34. Messages ---------- */
 
 Router.register('messages', function () {
+  if (!isFull()) return lockedView('Messages', 'messages');
   var list = h('div', { class: 'conv-list' });
   function renderList() {
     clearNode(list);
@@ -2491,7 +2661,7 @@ Router.register('messages', function () {
   var screen = Screen({ body: [h('h1', { class: 'q-title tight', text: 'Messages' }), list] });
   loadList(list, renderList, 500);
   return { el: screen.el, tab: 'messages', title: 'Messages' };
-}, { auth: 'approved' });
+}, { auth: 'browse' });
 
 var CANNED_REPLIES = [
   'Thank you for reaching out. I will discuss with my family and reply soon.',
@@ -2592,40 +2762,60 @@ function openPhotoPrivacy() {
 
 /* ---------- 36. Account ---------- */
 Router.register('account', function () {
+  var hasProfile = State.status !== 'none';
+  var full = isFull();
   var percent = completionPercent();
   var ring = progressRing(percent, 84, 'Profile completion');
-  var profileCard = h('div', { class: 'card account-card' }, [
-    h('img', { class: 'account-photo', src: accountPhoto(), alt: 'Your main photo' }),
-    h('div', { class: 'account-info' }, [
-      h('h2', { text: myName() }),
-      h('p', { class: 'muted', text: 'Profile ID: ' + Bridge.ownCode() }),
-      h('button', { type: 'button', class: 'btn btn-outline btn-small', onClick: function () { Router.go('editProfile'); } }, [Icon('edit', 20), 'Edit profile'])
-    ]),
-    ring.node
-  ]);
-  var menu = h('div', { class: 'menu-list' }, [
-    menuRow('user', 'My profile', 'See how others see you', function () { Router.go('myprofile'); }),
-    menuRow('edit', 'Edit profile sections', 'Changes are reviewed again', function () { Router.go('editProfile'); }),
-    menuRow('heart', 'Shortlisted profiles', null, function () { Router.go('shortlist'); }),
-    menuRow('lock', 'Photo privacy', null, openPhotoPrivacy),
-    menuRow('users', 'Partner preferences', null, function () { editThenSave('partner'); }),
-    menuRow('verified', 'Verification status', null, function () { Router.go('verification'); }),
-    menuRow('crown', 'Premium plans', null, function () { Router.go('plans'); }, 'gold'),
-    menuRow('gift', 'Success stories', null, function () { Router.go('stories'); }),
-    menuRow('settings', 'Settings', null, function () { Router.go('settings'); }),
-    menuRow('help', 'Help and support', null, function () { Router.go('help'); }),
-    menuRow('info', 'About', null, function () { Router.go('about'); }),
-    menuRow('logout', 'Logout', null, logout, 'danger')
-  ]);
-  var screen = Screen({ body: [h('h1', { class: 'q-title tight', text: 'Account' }), profileCard, h('p', { class: 'muted center', text: 'Phone: +91 ' + fmtPhone(State.phone) }), menu, h('p', { class: 'muted center', style: 'margin-top:16px', text: 'Profiles are shared only for marriage purposes. Do not share or screenshot profiles.' })] });
+  var statusRoute = 'pending';
+  var profileCard = hasProfile
+    ? h('div', { class: 'card account-card' }, [
+      h('img', { class: 'account-photo', src: accountPhoto(), alt: 'Your main photo' }),
+      h('div', { class: 'account-info' }, [
+        h('h2', { text: myName() }),
+        h('p', { class: 'muted', text: full ? 'Profile ID: ' + Bridge.ownCode() : (State.status === 'pending' ? 'Under review' : 'Not approved yet') }),
+        full ? h('button', { type: 'button', class: 'btn btn-outline btn-small', onClick: function () { Router.go('editProfile'); } }, [Icon('edit', 20), 'Edit profile'])
+          : h('button', { type: 'button', class: 'btn btn-outline btn-small', text: 'View status', onClick: function () { Router.go(statusRoute); } })
+      ]),
+      full ? ring.node : null
+    ])
+    : h('div', { class: 'card status-banner' }, [
+      h('strong', { text: 'You are browsing as a guest' }),
+      h('span', { class: 'muted', text: 'Create your profile to send interests, message and see contacts after the admin approves it.' }),
+      h('button', { type: 'button', class: 'btn btn-primary btn-small', text: 'Create profile', onClick: function () { Router.go('choice'); } })
+    ]);
+
+  var rows = [];
+  if (hasProfile) rows.push(menuRow('user', 'My profile', 'See how others see you', function () { Router.go('myprofile'); }));
+  if (hasProfile && !full) rows.push(menuRow('clock', 'Profile status', 'Waiting for approval', function () { Router.go('pending'); }));
+  if (State.status === 'pending') rows.push(menuRow('edit', 'Edit profile sections', 'Sent to the admin with your profile', function () { Router.go('editProfile'); }));
+  if (full) {
+    rows.push(menuRow('edit', 'Edit profile sections', 'Changes are reviewed again', function () { Router.go('editProfile'); }));
+    rows.push(menuRow('heart', 'Shortlisted profiles', null, function () { Router.go('shortlist'); }));
+    rows.push(menuRow('lock', 'Photo privacy', null, openPhotoPrivacy));
+    rows.push(menuRow('users', 'Partner preferences', null, function () { editThenSave('partner'); }));
+    rows.push(menuRow('verified', 'Verification status', null, function () { Router.go('verification'); }));
+  }
+  rows.push(menuRow('crown', 'Premium plans', null, function () { Router.go('plans'); }, 'gold'));
+  rows.push(menuRow('gift', 'Success stories', null, function () { Router.go('stories'); }));
+  rows.push(menuRow('settings', 'Settings', null, function () { Router.go('settings'); }));
+  rows.push(menuRow('help', 'Help and support', null, function () { Router.go('help'); }));
+  rows.push(menuRow('info', 'About', null, function () { Router.go('aboutApp'); }));
+  rows.push(menuRow('logout', 'Logout', null, logout, 'danger'));
+
+  var screen = Screen({ body: [
+    h('h1', { class: 'q-title tight', text: 'Account' }), profileCard,
+    h('p', { class: 'muted center', text: 'Phone: +91 ' + fmtPhone(State.phone) }),
+    h('div', { class: 'menu-list' }, rows),
+    h('p', { class: 'muted center', style: 'margin-top:16px', text: 'Profiles are shared only for marriage purposes. Do not share or screenshot profiles.' })
+  ] });
   return {
     el: screen.el, tab: 'account', title: 'Account',
     mounted: function () {
-      ring.start();
+      if (full) ring.start();
       if (State.autoSave) { State.autoSave = false; if (Bridge.saveProfileData()) UI.toast('Your changes were saved'); }
     }
   };
-}, { auth: 'approved' });
+}, { auth: 'browse' });
 
 /* ---------- Edit profile (an approved profile goes back for review) ---------- */
 Router.register('editProfile', function () {
@@ -2644,16 +2834,19 @@ Router.register('editProfile', function () {
 
   function save() {
     if (!dirty()) { UI.toast('You have not changed anything yet.', 'info'); return; }
+    var wasApproved = State.status === 'approved';
     UI.confirm({
-      title: 'Send for review again?',
-      message: 'Saving these changes sends your profile back for approval. You will not be able to browse matches until it is approved again. Continue?',
-      confirmText: 'Save and send', cancelText: 'Cancel'
+      title: wasApproved ? 'Send for review again?' : 'Save your changes?',
+      message: wasApproved
+        ? 'Saving these changes sends your profile back for approval. You can keep browsing, but interests, messages and contacts stay locked until it is approved again. Continue?'
+        : 'Your changes will be sent to the admin with your profile. You can keep browsing while it is reviewed.',
+      confirmText: wasApproved ? 'Save and send' : 'Save', cancelText: 'Cancel'
     }).then(function (yes) {
       if (!yes) return;
       if (!Bridge.submitProfile()) { UI.toast('Could not save. Your browser storage is full or blocked.', 'error'); return; }
       State.editSnapshot = null;
       UI.toast('Changes saved. Your profile is under review.');
-      Router.replace('pending');
+      Router.replace('home');
     });
   }
 
@@ -2664,7 +2857,7 @@ Router.register('editProfile', function () {
     footer: bigButton('Save changes', save)
   });
   return { el: screen.el, tab: 'account', title: 'Edit profile' };
-}, { auth: 'approved' });
+}, { auth: 'member' });
 
 /* ---------- Verification status ---------- */
 Router.register('verification', function () {
@@ -2687,6 +2880,23 @@ Router.register('verification', function () {
 }, { auth: 'approved' });
 
 /* ---------- Premium plans ---------- */
+function planButton(plan) {
+  var button = h('button', { type: 'button', class: 'btn btn-block ' + (plan.tag ? 'btn-gold' : 'btn-outline') });
+  button.addEventListener('click', function () {
+    if (!allow('premium')) return;
+    UI.toast('Demo only. Payments are not part of this demo.', 'info');
+  });
+  bindPaint(button, function () {
+    var locked = !canUse('premium');
+    clearNode(button);
+    if (locked) button.appendChild(Icon('lock', 18));
+    button.appendChild(document.createTextNode('Choose plan'));
+    button.classList.toggle('is-locked', locked);
+    button.setAttribute('aria-disabled', locked ? 'true' : 'false');
+  });
+  return button;
+}
+
 Router.register('plans', function () {
   var cards = PLANS.map(function (plan) {
     return h('section', { class: 'card plan-card' + (plan.tag ? ' featured' : '') }, [
@@ -2694,12 +2904,12 @@ Router.register('plans', function () {
       h('div', { class: 'plan-head' }, [h('span', { class: 'crown' }, Icon('crown', 30)), h('h2', { text: plan.months + ' months' })]),
       h('p', { class: 'plan-price' }, [h('strong', { text: '₹' + plan.price }), h('span', { class: 'muted', text: '  (₹' + plan.perMonth + ' a month)' })]),
       h('ul', { class: 'plan-features' }, plan.features.map(function (f) { return h('li', {}, [Icon('check', 18), h('span', { text: f })]); })),
-      h('button', { type: 'button', class: 'btn btn-block ' + (plan.tag ? 'btn-gold' : 'btn-outline'), text: 'Choose plan', onClick: function () { UI.toast('Demo only. Payments are not part of this demo.', 'info'); } })
+      planButton(plan)
     ]);
   });
   var screen = Screen({ back: true, body: [h('h1', { class: 'q-title tight', text: 'Premium plans' }), h('p', { class: 'q-helper', text: 'Get more from your search.' })].concat(cards) });
   return { el: screen.el, tab: 'account', title: 'Premium plans' };
-}, { auth: 'approved' });
+}, { auth: 'browse' });
 
 /* ---------- Success stories ---------- */
 Router.register('stories', function () {
@@ -2711,7 +2921,7 @@ Router.register('stories', function () {
   });
   var screen = Screen({ back: true, body: [h('h1', { class: 'q-title tight', text: 'Success stories' }), h('p', { class: 'q-helper', text: 'Couples who found each other in the Sindhi community.' })].concat(cards) });
   return { el: screen.el, tab: 'account', title: 'Success stories' };
-}, { auth: 'approved' });
+}, { auth: 'browse' });
 
 /* ---------- Settings ---------- */
 Router.register('settings', function () {
@@ -2739,6 +2949,7 @@ Router.register('settings', function () {
       h('button', { type: 'button', class: 'btn btn-danger btn-block', onClick: function () {
         UI.confirm({ title: 'Delete your account?', message: 'Your profile, shortlist and messages will be removed. This cannot be undone.', confirmText: 'Delete account', danger: true }).then(function (yes) {
           if (!yes) return;
+          if (!State.userId) { Bridge.logout(); resetState(); UI.toast('You have been logged out'); Router.replace('phone'); return; }
           if (!Bridge.deleteAccount()) { UI.toast('Could not delete the account. Please try again.', 'error'); return; }
           resetState();
           UI.toast('Your account was deleted');
@@ -2748,7 +2959,7 @@ Router.register('settings', function () {
     ]
   });
   return { el: screen.el, tab: 'account', title: 'Settings' };
-}, { auth: 'approved' });
+}, { auth: 'browse' });
 
 /* ---------- Help and support ---------- */
 Router.register('help', function () {
@@ -2769,10 +2980,10 @@ Router.register('help', function () {
     body: [h('h1', { class: 'q-title tight', text: 'Help and support' }), h('div', { class: 'card faq' }, items), h('h3', { class: 'section-label', text: 'Still need help?' }), bigButton('Call support', showSupport)]
   });
   return { el: screen.el, tab: 'account', title: 'Help and support' };
-}, { auth: 'approved' });
+}, { auth: 'browse' });
 
-/* ---------- About ---------- */
-Router.register('about', function () {
+/* ---------- About the app (the onboarding question "About me" is the separate route 'about') ---------- */
+Router.register('aboutApp', function () {
   var screen = Screen({
     back: true,
     body: [
@@ -2785,4 +2996,4 @@ Router.register('about', function () {
     ]
   });
   return { el: screen.el, tab: 'account', title: 'About' };
-}, { auth: 'approved' });
+}, { auth: 'browse' });
