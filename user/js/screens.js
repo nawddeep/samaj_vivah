@@ -473,14 +473,20 @@ registerStep('name', {
 /* ---------- 8. Date of birth ---------- */
 registerStep('dob', {
   title: function () { return whoText('What is your date of birth?', 'What is the date of birth?'); },
-  helper: 'The age is worked out for you.',
+  helper: 'Date of birth, weekday, birth time and birth place (Page 1 Biodata).',
   render: function (content) {
     var p = State.profile;
     var ageLine = h('div', { class: 'age-line', 'aria-live': 'polite' });
     function paintAge() {
       var age = calcAge(p.dobDay, p.dobMonth, p.dobYear);
       ageLine.hidden = age === null;
-      if (age !== null) ageLine.textContent = 'Age: ' + age + ' years';
+      if (age !== null) {
+        var m = MONTHS.indexOf(p.dobMonth);
+        var d = new Date(Number(p.dobYear), m, Number(p.dobDay));
+        var weekday = OPTIONS.weekdays[d.getDay()] || '';
+        p.birthWeekday = weekday;
+        ageLine.textContent = 'Age: ' + age + ' years • Weekday: ' + weekday;
+      }
     }
     function select(key, label, values, placeholder) {
       var sel = h('select', { class: 'select', 'aria-label': label }, [h('option', { value: '', text: placeholder })].concat(
@@ -493,8 +499,19 @@ registerStep('dob', {
     var days = []; for (var d = 1; d <= 31; d++) days.push(d);
     var years = []; for (var y = new Date().getFullYear() - 18; y >= new Date().getFullYear() - 60; y--) years.push(y);
     var row = h('div', { class: 'row-3' }, [select('dobDay', 'Day', days, 'Day'), select('dobMonth', 'Month', MONTHS, 'Month'), select('dobYear', 'Year', years, 'Year')]);
-    var wrap = fieldWrap('', h('div', {}, [row, ageLine]), 'dob');
+    var wrap = fieldWrap('Date of birth', h('div', {}, [row, ageLine]), 'dob');
     content.appendChild(wrap);
+
+    var timeRow = h('div', { class: 'row-2', style: 'margin-top: 1rem;' }, [
+      textInput(p, 'birthTime', 'Time of birth', { placeholder: 'e.g. 06:30', hint: 'Optional' }),
+      fieldWrap('AM / PM', segmented(p, 'birthAmPm', ['AM', 'PM'], 'AM or PM'), 'birthAmPm')
+    ]);
+    content.appendChild(timeRow);
+
+    content.appendChild(textInput(p, 'birthPlace', 'Birth city / Place of birth', {
+      maxlength: 40, placeholder: 'e.g. Jaipur, Ajmer, Ulhasnagar', hint: 'Optional - for kundali matching'
+    }));
+
     paintAge();
   },
   validate: function () {
@@ -511,17 +528,37 @@ registerStep('dob', {
 /* ---------- 9. Marital status ---------- */
 registerStep('marital', {
   title: 'What is the marital status?',
-  helper: 'Please choose the one that fits best.',
+  helper: 'Please choose the one that fits best (Includes Abandoned / Separated from Page 2).',
   render: function (content) {
-    content.appendChild(fieldWrap('', optionCards(State.profile, 'maritalStatus', OPTIONS.maritalStatus), 'maritalStatus'));
+    var p = State.profile;
+    var cards = optionCards(p, 'maritalStatus', OPTIONS.maritalStatus);
+    var condBox = h('div', { class: 'conditional-marital-box', style: 'margin-top: 1rem;' });
+
+    function renderCond() {
+      clearNode(condBox);
+      if (p.maritalStatus && p.maritalStatus !== 'Never Married') {
+        condBox.appendChild(textInput(p, 'previousMarriageDuration', 'Duration of previous marriage', {
+          placeholder: 'e.g. 2 years, or 6 months', hint: 'Optional'
+        }));
+        condBox.appendChild(fieldWrap('Number of children from previous marriage', stepper(p, 'childrenCount', 0, 5, 'childrenCount')));
+        if (p.childrenCount > 0) {
+          condBox.appendChild(fieldWrap('Children custody / living status', segmented(p, 'childrenLivingWith', ['Living with me', 'Living with other parent', 'Shared custody'], 'Children status')));
+        }
+      }
+    }
+    cards.addEventListener('click', function () { setTimeout(renderCond, 30); });
+    renderCond();
+
+    content.appendChild(fieldWrap('', cards, 'maritalStatus'));
+    content.appendChild(condBox);
   },
   validate: function () { return State.profile.maritalStatus ? [] : [['maritalStatus', 'Please select the marital status.']]; }
 });
 
-/* ---------- 10. Height (scroll picker) ---------- */
+/* ---------- 10. Height & Weight ---------- */
 registerStep('height', {
-  title: function () { return whoText('How tall are you?', 'How tall is ' + (State.profile.firstName || 'the person') + '?'); },
-  helper: 'Scroll to select the height.',
+  title: function () { return whoText('Height & Weight', (State.profile.firstName || 'Candidate') + '’s Height & Weight'); },
+  helper: 'Scroll to select height. Weight is optional (Page 1 Biodata).',
   render: function (content) {
     var p = State.profile;
     var MIN = 48;
@@ -565,24 +602,51 @@ registerStep('height', {
     content.appendChild(readout);
     content.appendChild(h('div', { class: 'wheel-wrap' }, wheel));
     content._scrollToValue = function () { scrollToValue(p.heightIn, false); };
+
+    // Weight in kg (Page 1 Biodata)
+    content.appendChild(h('div', { style: 'margin-top: 1.25rem;' }, [
+      textInput(p, 'weightKg', 'Weight (in kg)', {
+        type: 'number', placeholder: 'e.g. 68', hint: 'Optional (from Page 1 Biodata)'
+      })
+    ]));
+
     paint();
   },
   mounted: function (content) { content._scrollToValue(); }
 });
 
-/* ---------- 11. Community details (this app is only for the Sindhi community) ---------- */
+/* ---------- 11. Community details ---------- */
 registerStep('community', {
-  title: 'Community details',
-  helper: 'Tell us about religion and language.',
+  title: 'Community & Ancestral Identity',
+  helper: 'Your community details and preference restrictions (Page 2 Biodata).',
   render: function (content) {
     var p = State.profile;
     p.community = 'Sindhi';
-    content.appendChild(h('div', { class: 'fixed-community' }, [
-      Icon('lock'),
-      h('span', { class: 'menu-text' }, [h('span', { class: 'p-active', text: 'Community' }), h('strong', { text: 'Sindhi' })])
-    ]));
+
+    var pIds = Array.isArray(p.panchayatIds) && p.panchayatIds.length ? p.panchayatIds : (p.panchayatId ? [p.panchayatId] : []);
+    var aIds = Array.isArray(p.ancestralOriginIds) && p.ancestralOriginIds.length ? p.ancestralOriginIds : (p.ancestralOriginId ? [p.ancestralOriginId] : []);
+    var sIds = Array.isArray(p.subCommunityIds) && p.subCommunityIds.length ? p.subCommunityIds : (p.subCommunityId ? [p.subCommunityId] : []);
+
+    var pNames = pIds.map(function (id) { var o = getPanchayatById(id); return o ? o.name + ' (' + o.city + ')' : id; }).join('; ') || 'Not selected';
+    var aNames = aIds.map(function (id) { var o = getAncestralOriginById(id); return o ? o.name + ' [' + (o.hindiName || '') + ']' : id; }).join('; ') || 'Not selected';
+    var sNames = sIds.map(function (id) { var o = getSubCommunityById(id); return o ? o.name + ' [' + (o.hindiName || '') + ']' : id; }).join('; ') || 'Not selected';
+
+    var commCard = h('div', { class: 'card info-card', style: 'margin-bottom: 1rem; border-left: 4px solid var(--maroon);' }, [
+      h('div', { style: 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;' }, [
+        h('h3', { text: '🏛️ Sindhi Community Affiliation' }),
+        h('button', { type: 'button', class: 'btn btn-outline btn-small', text: 'Change', onClick: function () { Router.go('communitySelect'); } })
+      ]),
+      h('div', { style: 'font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.35rem;' }, [
+        h('div', {}, [h('strong', { text: 'Panchayat(s): ' }), h('span', { text: pNames })]),
+        h('div', {}, [h('strong', { text: 'Ancestral Place(s) in Sindh: ' }), h('span', { text: aNames })]),
+        h('div', {}, [h('strong', { text: 'Lineage / Sub-community: ' }), h('span', { text: sNames })])
+      ])
+    ]);
+    content.appendChild(commCard);
+
     content.appendChild(pickerField(p, 'religion', 'Religion', function () { return OPTIONS.religions; }));
     content.appendChild(pickerField(p, 'motherTongue', 'Mother tongue', function () { return OPTIONS.languages; }));
+    content.appendChild(fieldWrap('Caste / Community Restriction Preference', segmented(p, 'casteRestriction', OPTIONS.casteRestrictions, 'Caste restriction'), 'casteRestriction', 'Page 2 Biodata requirement: Restriction for marriage matches'));
   },
   validate: function () {
     var p = State.profile;
@@ -593,10 +657,10 @@ registerStep('community', {
   }
 });
 
-/* ---------- 12. Location ---------- */
+/* ---------- 12. Location & Property Details ---------- */
 registerStep('location', {
   title: function () { return whoText('Where do you live?', 'Where does ' + (State.profile.firstName || 'the person') + ' live?'); },
-  helper: 'Your city helps us show nearby matches.',
+  helper: 'Current residence and property/housing details (Page 1 & 2 Biodata).',
   render: function (content) {
     var p = State.profile;
     var stateField;
@@ -614,6 +678,20 @@ registerStep('location', {
     content.appendChild(countryField);
     content.appendChild(stateField);
     content.appendChild(cityField);
+
+    content.appendChild(textInput(p, 'residentialAddress', 'Current Residential Address', {
+      placeholder: 'House/Flat No., Street, Colony, Locality', hint: 'Page 1 Biodata: Residential Address'
+    }));
+
+    var housingCard = h('div', { class: 'card', style: 'margin-top: 1rem; padding: 1rem;' }, [
+      h('h3', { style: 'font-size: 1rem; color: var(--maroon); margin-bottom: 0.75rem;', text: '🏠 Property & Housing Details' }),
+      textInput(p, 'houseSize', 'House / Flat Size', {
+        placeholder: 'e.g. 2 BHK / 1200 sq ft or 3 BHK Bungalow', hint: 'From Page 1 & 2 Biodata'
+      }),
+      fieldWrap('Property Status', segmented(p, 'houseType', OPTIONS.houseTypes, 'Property type'), 'houseType', 'Owned or Rented property (Page 1 & 2)')
+    ]);
+    content.appendChild(housingCard);
+
     content.appendChild(pickerField(p, 'residency', 'Residency status', function () { return OPTIONS.residency; }, { hint: 'Optional' }));
     content.appendChild(fieldWrap('Living with family?', segmented(p, 'livingWithFamily', ['Yes', 'No'], 'Living with family'), 'livingWithFamily'));
   },
@@ -691,16 +769,114 @@ registerStep('horoscope', {
 
 /* ---------- 17. Family details ---------- */
 registerStep('family', {
-  title: 'Family details',
-  helper: 'Families matter. A few details about the family.',
+  title: 'Family Details & Structure',
+  helper: 'Candidate family tree, parents, grandparents, and siblings (Page 1 & 2 Biodata).',
   render: function (content) {
     var p = State.profile;
-    content.appendChild(pickerField(p, 'fatherOcc', 'Father’s occupation', function () { return OPTIONS.fatherOcc; }));
-    content.appendChild(pickerField(p, 'motherOcc', 'Mother’s occupation', function () { return OPTIONS.motherOcc; }));
-    content.appendChild(h('div', { class: 'row-2' }, [
-      fieldWrap('Brothers', stepper(p, 'brothers', 0, 6, 'brothers')),
-      fieldWrap('Sisters', stepper(p, 'sisters', 0, 6, 'sisters'))
+    if (!p.brothersList) p.brothersList = [];
+    if (!p.sistersList) p.sistersList = [];
+
+    // Grandparents Card
+    var grandCard = h('div', { class: 'card', style: 'padding: 1rem; margin-bottom: 1rem;' }, [
+      h('h3', { style: 'font-size: 1rem; color: var(--maroon); margin-bottom: 0.75rem;', text: '👴👵 Paternal Grandparents (दादा - दादी)' }),
+      textInput(p, 'dadaName', 'Grandfather’s Name (दादाजी का नाम)', {
+        placeholder: 'e.g. Late Kishinchand Lalwani', hint: 'Page 1 Biodata: Grandfather'
+      }),
+      textInput(p, 'dadiName', 'Grandmother’s Name (दादीजी का नाम)', {
+        placeholder: 'e.g. Late Radhadevi Lalwani', hint: 'Page 1 Biodata: Grandmother'
+      })
+    ]);
+    content.appendChild(grandCard);
+
+    // Parents Details Card
+    var parentsCard = h('div', { class: 'card', style: 'padding: 1rem; margin-bottom: 1rem;' }, [
+      h('h3', { style: 'font-size: 1rem; color: var(--maroon); margin-bottom: 0.75rem;', text: '👨‍👩‍👦 Parents Information' }),
+      textInput(p, 'fatherName', 'Father’s Name', { placeholder: 'Father’s full name' }),
+      pickerField(p, 'fatherOcc', 'Father’s Occupation', function () { return OPTIONS.fatherOcc; }),
+      textInput(p, 'fatherMobile', 'Father’s Mobile Number', { type: 'tel', placeholder: '10-digit mobile number', hint: 'Kept private for verified contact only' }),
+      pickerField(p, 'fatherIncome', 'Father’s Approx Annual Income', function () { return OPTIONS.familyIncomes; }, { hint: 'Optional (Page 1 Biodata)' }),
+      h('div', { style: 'height: 1px; background: var(--border); margin: 1rem 0;' }),
+      textInput(p, 'motherName', 'Mother’s Name', { placeholder: 'Mother’s full name' }),
+      pickerField(p, 'motherOcc', 'Mother’s Occupation', function () { return OPTIONS.motherOcc; }),
+      textInput(p, 'motherMobile', 'Mother’s Mobile Number', { type: 'tel', placeholder: '10-digit mobile number', hint: 'Kept private for verified contact only' })
+    ]);
+    content.appendChild(parentsCard);
+
+    // Siblings Card (Page 2: Up to 3 brothers and 3 sisters with spouse and family details)
+    var siblingsCard = h('div', { class: 'card', style: 'padding: 1rem; margin-bottom: 1rem;' });
+    var brothersBox = h('div', { class: 'brothers-box' });
+    var sistersBox = h('div', { class: 'sisters-box' });
+
+    function syncBrotherList() {
+      var count = p.brothers || 0;
+      while (p.brothersList.length < count) {
+        p.brothersList.push({ name: '', maritalStatus: 'Unmarried', wifeName: '', occupation: '', phone: '' });
+      }
+      if (p.brothersList.length > count) p.brothersList = p.brothersList.slice(0, count);
+      renderBrothers();
+    }
+
+    function syncSisterList() {
+      var count = p.sisters || 0;
+      while (p.sistersList.length < count) {
+        p.sistersList.push({ name: '', maritalStatus: 'Unmarried', husbandName: '', inlawsCity: '', motherInLawName: '', phone: '' });
+      }
+      if (p.sistersList.length > count) p.sistersList = p.sistersList.slice(0, count);
+      renderSisters();
+    }
+
+    function renderBrothers() {
+      clearNode(brothersBox);
+      if (!p.brothersList.length) return;
+      p.brothersList.forEach(function (b, idx) {
+        var bCard = h('div', { class: 'sibling-row-card', style: 'background: var(--ivory); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; margin-top: 0.75rem;' }, [
+          h('h4', { style: 'font-size: 0.9rem; color: var(--maroon); margin-bottom: 0.5rem;', text: 'Brother ' + (idx + 1) + ' Details' }),
+          textInput(b, 'name', 'Brother’s Name', { placeholder: 'Full name' }),
+          fieldWrap('Marital Status', segmented(b, 'maritalStatus', ['Unmarried', 'Married'], 'Marital Status')),
+          b.maritalStatus === 'Married' ? textInput(b, 'wifeName', 'Wife’s Name (भाभी का नाम)', { placeholder: 'Spouse full name' }) : null,
+          textInput(b, 'occupation', 'Occupation', { placeholder: 'e.g. Software Engineer / Business', hint: 'Optional' }),
+          textInput(b, 'phone', 'Phone Number', { type: 'tel', placeholder: '10-digit mobile', hint: 'Optional (kept private)' })
+        ]);
+        brothersBox.appendChild(bCard);
+      });
+    }
+
+    function renderSisters() {
+      clearNode(sistersBox);
+      if (!p.sistersList.length) return;
+      p.sistersList.forEach(function (s, idx) {
+        var sCard = h('div', { class: 'sibling-row-card', style: 'background: var(--ivory); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; margin-top: 0.75rem;' }, [
+          h('h4', { style: 'font-size: 0.9rem; color: var(--maroon); margin-bottom: 0.5rem;', text: 'Sister ' + (idx + 1) + ' Details' }),
+          textInput(s, 'name', 'Sister’s Name', { placeholder: 'Full name' }),
+          fieldWrap('Marital Status', segmented(s, 'maritalStatus', ['Unmarried', 'Married'], 'Marital Status')),
+          s.maritalStatus === 'Married' ? h('div', {}, [
+            textInput(s, 'husbandName', 'Husband’s Name (जीजाजी का नाम)', { placeholder: 'Spouse full name' }),
+            textInput(s, 'inlawsCity', 'In-laws City (ससुराल का शहर)', { placeholder: 'e.g. Mumbai, Jaipur, Dubai' }),
+            textInput(s, 'motherInLawName', 'Mother-in-law’s Name (सास का नाम)', { placeholder: 'e.g. Smt. Meena Advani', hint: 'Optional (Page 2 Biodata)' })
+          ]) : null,
+          textInput(s, 'phone', 'Phone Number', { type: 'tel', placeholder: '10-digit mobile', hint: 'Optional (kept private)' })
+        ]);
+        sistersBox.appendChild(sCard);
+      });
+    }
+
+    var brotherStepper = stepper(p, 'brothers', 0, 3, 'brothers');
+    brotherStepper.addEventListener('click', function () { setTimeout(syncBrotherList, 20); });
+    var sisterStepper = stepper(p, 'sisters', 0, 3, 'sisters');
+    sisterStepper.addEventListener('click', function () { setTimeout(syncSisterList, 20); });
+
+    siblingsCard.appendChild(h('h3', { style: 'font-size: 1rem; color: var(--maroon); margin-bottom: 0.75rem;', text: '👫 Siblings Structure (Page 2 Biodata)' }));
+    siblingsCard.appendChild(h('div', { class: 'row-2' }, [
+      fieldWrap('Brothers (up to 3)', brotherStepper),
+      fieldWrap('Sisters (up to 3)', sisterStepper)
     ]));
+    siblingsCard.appendChild(brothersBox);
+    siblingsCard.appendChild(sistersBox);
+    syncBrotherList();
+    syncSisterList();
+    content.appendChild(siblingsCard);
+
+    // General Family Details
     content.appendChild(fieldWrap('Family type', segmented(p, 'familyType', OPTIONS.familyTypes, 'Family type'), 'familyType'));
     content.appendChild(fieldWrap('Family values', chipGroup(p, 'familyValues', OPTIONS.familyValues), 'familyValues'));
     content.appendChild(pickerField(p, 'familyIncome', 'Family income', function () { return OPTIONS.familyIncomes; }, { hint: 'Optional' }));
@@ -1103,9 +1279,13 @@ Router.register('otp', function () {
     if (code().length < 4) { showErrors(wrap, [['otp', 'Please enter the 4 digit OTP.']]); return; }
     setButtonBusy(button, 'Verifying...');
     verifyTimer = setTimeout(function () {
-      Bridge.login(State.phone); // an existing number opens its account; a new one starts the profile
+      var user = Bridge.login(State.phone); // an existing number opens its account; a new one starts the profile
       UI.toast('Mobile number verified');
-      Router.replace(Router.gateName()); // new users start the profile, returning users go to their status screen
+      if (!user || user.status === 'none' || !user.profileId) {
+        Router.replace('aadhaar');
+      } else {
+        Router.replace(Router.gateName());
+      }
     }, 800);
   }
 
@@ -1132,6 +1312,645 @@ Router.register('otp', function () {
     leave: function () { clearInterval(ticker); clearTimeout(verifyTimer); autoFill.forEach(clearTimeout); }
   };
 });
+
+/* ---------- Aadhaar Identity Verification Step (Production-Ready Architecture) ---------- */
+Router.register('aadhaar', function () {
+  var p = State.profile;
+  var stepState = {
+    method: p.aadhaarMethod || 'digilocker', // 'digilocker' | 'offline_xml' | 'manual'
+    status: p.aadhaarStatus || (p.aadhaarVerified ? 'VERIFIED_DIGILOCKER' : 'UNVERIFIED'),
+    consentGiven: Boolean(p.aadhaarConsentGiven !== false),
+    shareCode: '1234',
+    selectedManualDoc: 'voter_id',
+    simulateFail: false,
+    inProgress: false,
+    errorMessage: '',
+    verifiedRef: p.aadhaarMaskedRef || 'XXXX-XXXX-9012'
+  };
+
+  var container = h('div', { class: 'aadhaar-screen' });
+
+  // 1. Regulatory Consent & Purpose Disclosure Card (DPDP Act 2023 & UIDAI Guidelines)
+  var consentCheck = h('input', { type: 'checkbox', id: 'aadhaar-consent-cb' });
+  consentCheck.checked = stepState.consentGiven;
+  consentCheck.addEventListener('change', function () {
+    stepState.consentGiven = consentCheck.checked;
+    p.aadhaarConsentGiven = consentCheck.checked;
+    p.aadhaarConsentTimestamp = consentCheck.checked ? new Date().toISOString() : '';
+  });
+
+  var disclosureCard = h('div', { class: 'aadhaar-disclaimer-card' }, [
+    h('div', { class: 'aadhaar-badge-icon' }, Icon('shield', 26)),
+    h('div', { class: 'aadhaar-disclaimer-content' }, [
+      h('h3', { text: 'Identity Verification & Purpose Disclosure' }),
+      h('p', { text: 'In accordance with Section 4(4)(ii) of the Aadhaar Act, 2016 (as amended 2019) and the Digital Personal Data Protection (DPDP) Act, 2023, Samaj Vivah facilitates voluntary identity validation solely to prevent fraudulent profiles and guarantee community trust. No raw 12-digit Aadhaar numbers or biometrics are collected, inspected, or stored.' }),
+      h('label', { class: 'consent-row', for: 'aadhaar-consent-cb', style: 'margin-top: 10px; font-weight: 600; font-size: 13.5px;' }, [
+        consentCheck,
+        h('span', { text: 'I voluntarily consent to verify my identity via government-approved DigiLocker / Offline e-KYC or alternative document for matrimonial matching on Samaj Vivah.' })
+      ])
+    ])
+  ]);
+
+  var statusBox = h('div', { class: 'aadhaar-status-box' });
+  var formArea = h('div', { class: 'aadhaar-form-area' });
+  var footerBtn = bigButton(stepState.status.indexOf('VERIFIED') !== -1 || stepState.status === 'MANUAL_PENDING' ? 'Continue to Community Selection' : 'Start Identity Verification', onAction);
+
+  function renderStatus() {
+    clearNode(statusBox);
+    if (stepState.status === 'VERIFIED_DIGILOCKER' || stepState.status === 'VERIFIED_OFFLINE_XML') {
+      var methodLabel = stepState.status === 'VERIFIED_DIGILOCKER' ? 'DigiLocker Verified' : 'Offline e-KYC Verified';
+      statusBox.appendChild(h('div', { class: 'aadhaar-success-banner' }, [
+        h('div', { class: 'aadhaar-verified-badge' }, [Icon('verified', 32), h('strong', { text: methodLabel + ' (Prototype Simulation)' })]),
+        h('p', { class: 'muted', text: 'Simulated reference: ' + stepState.verifiedRef + ' • Recorded at ' + (p.aadhaarVerifiedAt ? new Date(p.aadhaarVerifiedAt).toLocaleTimeString() : 'Just now') }),
+        h('div', { style: 'display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;' }, [
+          h('span', { class: 'aadhaar-status-pill', text: '✓ Method: ' + stepState.method.toUpperCase() }),
+          h('span', { class: 'aadhaar-status-pill', text: '✓ DPDP Consent Recorded' }),
+          h('span', { class: 'aadhaar-status-pill', text: '✓ Zero Biometrics Stored' })
+        ])
+      ]));
+      resetButton(footerBtn, State.editing ? 'Save & Return to Review' : 'Continue to Community Selection');
+    } else if (stepState.status === 'MANUAL_PENDING') {
+      statusBox.appendChild(h('div', { class: 'aadhaar-info-pill', style: 'background: #FFF9E6; border: 1.5px solid #EBD3A1; padding: 14px; flex-direction: column; align-items: flex-start; gap: 6px;' }, [
+        h('div', { style: 'display: flex; align-items: center; gap: 8px; color: #856404; font-weight: 700;' }, [
+          Icon('alert', 22),
+          h('span', { text: 'Alternative Verification Selected (Non-Exclusion Route)' })
+        ]),
+        h('p', { class: 'muted', text: 'Your profile will be manually verified by the Samaj Admin using your uploaded alternate document. You may proceed with registration.' }),
+        h('span', { class: 'aadhaar-status-pill', style: 'background: #FFF3CD; color: #856404;', text: 'Status: MANUAL_PENDING' })
+      ]));
+      resetButton(footerBtn, 'Continue to Community Selection');
+    } else if (stepState.status === 'FAILED') {
+      statusBox.appendChild(h('div', { class: 'aadhaar-fail-banner' }, [
+        h('div', { class: 'aadhaar-fail-badge' }, [Icon('alert', 28), h('strong', { text: 'Verification Failed (Gateway Simulation)' })]),
+        h('p', { class: 'muted', text: stepState.errorMessage || 'Simulated gateway timeout or citizen decline. You can retry or choose the alternative manual verification route.' }),
+        h('div', { style: 'display: flex; gap: 8px; margin-top: 6px;' }, [
+          h('button', { type: 'button', class: 'btn btn-outline btn-small', text: 'Retry Verification', onClick: function () {
+            stepState.status = 'UNVERIFIED';
+            stepState.simulateFail = false;
+            renderStatus();
+            renderForm();
+          } }),
+          h('button', { type: 'button', class: 'btn btn-secondary btn-small', text: 'Use Manual Govt ID Route', onClick: function () {
+            stepState.method = 'manual';
+            stepState.status = 'UNVERIFIED';
+            stepState.simulateFail = false;
+            renderStatus();
+            renderForm();
+          } })
+        ])
+      ]));
+      resetButton(footerBtn, 'Retry Verification');
+    } else if (stepState.inProgress) {
+      statusBox.appendChild(h('div', { class: 'aadhaar-progress-banner' }, [
+        h('div', { class: 'aadhaar-spinner' }),
+        h('strong', { id: 'aadhaar-step-text', text: 'Initiating secure identity handshake...' }),
+        h('p', { class: 'muted', text: 'Simulating government gateway protocol (zero local storage of raw credentials)...' })
+      ]));
+      setButtonBusy(footerBtn, 'Verifying...');
+    } else {
+      statusBox.appendChild(h('div', { class: 'aadhaar-info-pill' }, [
+        Icon('info', 16),
+        h('span', { text: 'Select an authorized verification mechanism below (DigiLocker, Offline e-KYC XML, or Manual ID).' })
+      ]));
+      resetButton(footerBtn, 'Initiate Identity Verification');
+    }
+  }
+
+  function renderForm() {
+    clearNode(formArea);
+    if (stepState.status.indexOf('VERIFIED') !== -1 || stepState.status === 'MANUAL_PENDING') {
+      var resetBtn = h('button', { type: 'button', class: 'link-btn', text: 'Change or reset verification method', onClick: function () {
+        stepState.status = 'UNVERIFIED';
+        p.aadhaarVerified = false;
+        p.aadhaarVerifiedAt = '';
+        p.aadhaarStatus = 'UNVERIFIED';
+        renderStatus();
+        renderForm();
+      } });
+      formArea.appendChild(h('div', { class: 'center', style: 'padding: 1rem 0;' }, resetBtn));
+      return;
+    }
+
+    // Method selection tabs
+    var tabs = h('div', { class: 'aadhaar-mode-tabs' }, [
+      h('button', {
+        type: 'button',
+        class: 'tab-chip ' + (stepState.method === 'digilocker' ? 'on' : ''),
+        text: '1. DigiLocker (Recommended)',
+        onClick: function () { stepState.method = 'digilocker'; renderForm(); }
+      }),
+      h('button', {
+        type: 'button',
+        class: 'tab-chip ' + (stepState.method === 'offline_xml' ? 'on' : ''),
+        text: '2. Offline e-KYC XML',
+        onClick: function () { stepState.method = 'offline_xml'; renderForm(); }
+      }),
+      h('button', {
+        type: 'button',
+        class: 'tab-chip ' + (stepState.method === 'manual' ? 'on' : ''),
+        text: '3. Alternative Manual ID',
+        onClick: function () { stepState.method = 'manual'; renderForm(); }
+      })
+    ]);
+    formArea.appendChild(tabs);
+
+    if (stepState.method === 'digilocker') {
+      var card = h('div', { class: 'card', style: 'padding: 14px; background: #fff;' }, [
+        h('div', { style: 'display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;' }, [
+          h('strong', { style: 'color: var(--maroon);', text: '🏛️ DigiLocker OAuth 2.0 Gateway' }),
+          h('span', { class: 'comm-status-badge verified', text: 'Government Authorized' })
+        ]),
+        h('p', { class: 'muted', style: 'font-size: 13px; line-height: 1.45;', text: 'Redirects to the official DigiLocker portal (api.digitallocker.gov.in) operated by NIC. Once authorized, a digitally signed token is received containing your verified demographic profile with a masked Aadhaar reference.' }),
+        h('div', { style: 'background: var(--cream); padding: 10px; border-radius: 8px; font-size: 12px; color: var(--text-soft); margin-top: 8px;' }, [
+          h('strong', { text: 'Production Integration Blueprint: ' }),
+          h('span', { text: 'Backend exchanges PKCE authorization code for access token. Raw 12-digit UID is never handled by the client.' })
+        ])
+      ]);
+      formArea.appendChild(card);
+    } else if (stepState.method === 'offline_xml') {
+      var xmlCard = h('div', { class: 'card', style: 'padding: 14px; background: #fff;' }, [
+        h('div', { style: 'display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;' }, [
+          h('strong', { style: 'color: var(--maroon);', text: '📄 Aadhaar Paperless Offline e-KYC (ZIP/XML)' }),
+          h('span', { class: 'comm-status-badge verified', text: 'UIDAI Sec 4(4)(ii)' })
+        ]),
+        h('p', { class: 'muted', style: 'font-size: 13px; line-height: 1.45;', text: 'Download your password-protected Offline e-KYC ZIP file from myaadhaar.uidai.gov.in and select it below along with your 4-digit Share Code.' }),
+        h('div', { style: 'display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;' }, [
+          h('div', { style: 'flex: 1; min-width: 180px;' }, [
+            h('label', { class: 'field-label', text: 'Select Offline e-KYC Package' }),
+            h('select', { class: 'select' }, [
+              h('option', { text: '📄 offline_ekyc_sample_signed.zip' }),
+              h('option', { text: '📄 uidai_paperless_ekyc_verified.xml' })
+            ])
+          ]),
+          h('div', { style: 'width: 140px;' }, [
+            h('label', { class: 'field-label', text: '4-Digit Share Code' }),
+            h('input', { type: 'password', class: 'input center', maxlength: '4', value: '1234' })
+          ])
+        ])
+      ]);
+      formArea.appendChild(xmlCard);
+    } else {
+      var manualCard = h('div', { class: 'card', style: 'padding: 14px; background: #fff;' }, [
+        h('div', { style: 'display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;' }, [
+          h('strong', { style: 'color: var(--maroon);', text: '🪪 Non-Exclusion Alternative Verification' }),
+          h('span', { class: 'comm-status-badge partially_verified', text: 'Manual Admin Review' })
+        ]),
+        h('p', { class: 'muted', style: 'font-size: 13px; line-height: 1.45;', text: 'Candidates who do not have an Aadhaar-linked mobile or prefer an alternative identity check can upload a Voter ID, Passport, or verified Sindhi Panchayat Letter.' }),
+        h('div', { style: 'margin-top: 10px;' }, [
+          h('label', { class: 'field-label', text: 'Select Document Type' }),
+          h('select', { class: 'select', onChange: function (e) { stepState.selectedManualDoc = e.target.value; } }, [
+            h('option', { value: 'voter_id', text: '🪪 Election Commission Voter ID Card' }),
+            h('option', { value: 'passport', text: '🛂 Indian Passport' }),
+            h('option', { value: 'panchayat_letter', text: '📜 Sindhi Panchayat Membership Certificate' })
+          ])
+        ])
+      ]);
+      formArea.appendChild(manualCard);
+    }
+
+    // QA Failure simulation switch
+    var failCb = h('input', { type: 'checkbox', id: 'fail-cb' });
+    failCb.checked = stepState.simulateFail;
+    failCb.addEventListener('change', function () { stepState.simulateFail = failCb.checked; });
+    var failLabel = h('label', { class: 'consent-row', for: 'fail-cb', style: 'margin-top: 14px; font-size: 12.5px; color: var(--text-soft);' }, [
+      failCb,
+      h('span', { text: 'Simulate Gateway Failure (QA: tests error banner, timeout & recovery paths)' })
+    ]);
+    formArea.appendChild(failLabel);
+  }
+
+  function onAction() {
+    if (stepState.status.indexOf('VERIFIED') !== -1 || stepState.status === 'MANUAL_PENDING') {
+      if (State.editing) {
+        State.editing = false;
+        Router.backBy(Router.index() - State.editBase);
+      } else {
+        Router.go('communitySelect');
+      }
+      return;
+    }
+
+    if (!stepState.consentGiven) {
+      UI.toast('Please check the voluntary consent box before continuing.', 'info');
+      return;
+    }
+
+    if (stepState.method === 'manual') {
+      stepState.status = 'MANUAL_PENDING';
+      p.aadhaarVerified = false;
+      p.aadhaarStatus = 'MANUAL_PENDING';
+      p.aadhaarMethod = 'manual';
+      p.aadhaarMaskedRef = 'Manual Review: ' + stepState.selectedManualDoc;
+      p.aadhaarConsentGiven = true;
+      p.aadhaarConsentTimestamp = new Date().toISOString();
+      if (Bridge.saveProfileData) Bridge.saveProfileData();
+      renderStatus();
+      renderForm();
+      UI.toast('Manual verification route recorded. Proceeding to community selection.', 'success');
+      return;
+    }
+
+    stepState.inProgress = true;
+    renderStatus();
+
+    setTimeout(function () {
+      var el = document.getElementById('aadhaar-step-text');
+      if (el) el.textContent = stepState.method === 'digilocker' ? 'Validating DigiLocker OAuth PKCE handshake...' : 'Decrypting Offline e-KYC XML with Share Code...';
+    }, 600);
+
+    setTimeout(function () {
+      var el = document.getElementById('aadhaar-step-text');
+      if (el) el.textContent = 'Verifying digital cryptographic signature against NIC / UIDAI certificate...';
+    }, 1200);
+
+    setTimeout(function () {
+      stepState.inProgress = false;
+      if (stepState.simulateFail) {
+        stepState.status = 'FAILED';
+        stepState.errorMessage = stepState.method === 'digilocker' ? 'DigiLocker gateway timeout: authorization code expired (Simulated Error).' : 'XML digital signature mismatch: Share Code invalid (Simulated Error).';
+        renderStatus();
+        renderForm();
+        UI.toast('Simulated verification failure.', 'error');
+      } else {
+        stepState.status = stepState.method === 'digilocker' ? 'VERIFIED_DIGILOCKER' : 'VERIFIED_OFFLINE_XML';
+        p.aadhaarVerified = true;
+        p.aadhaarVerifiedAt = new Date().toISOString();
+        p.aadhaarStatus = stepState.status;
+        p.aadhaarMethod = stepState.method;
+        p.aadhaarMaskedRef = 'XXXX-XXXX-9012';
+        p.aadhaarConsentGiven = true;
+        p.aadhaarConsentTimestamp = new Date().toISOString();
+        if (Bridge.saveProfileData) Bridge.saveProfileData();
+        renderStatus();
+        renderForm();
+        UI.toast('Identity successfully verified via ' + (stepState.method === 'digilocker' ? 'DigiLocker' : 'Offline e-KYC') + '!', 'success');
+      }
+    }, 1800);
+  }
+
+  var skipBtn = h('button', {
+    type: 'button', class: 'link-btn', text: 'Skip for Now',
+    onClick: function () {
+      p.aadhaarVerified = false;
+      p.aadhaarStatus = 'SKIPPED';
+      p.aadhaarMethod = 'skipped';
+      p.aadhaarMaskedRef = 'Unverified (Skipped)';
+      if (Bridge.saveProfileData) Bridge.saveProfileData();
+      if (State.editing) {
+        State.editing = false;
+        Router.backBy(Router.index() - State.editBase);
+      } else {
+        Router.go('communitySelect');
+      }
+    }
+  });
+
+  renderStatus();
+  renderForm();
+
+  var screen = Screen({
+    back: true,
+    right: skipBtn,
+    body: [
+      h('h1', { class: 'q-title', text: 'Aadhaar Identity Verification' }),
+      h('p', { class: 'q-helper', text: 'Government-approved identity validation prior to community affiliation selection.' }),
+      disclosureCard,
+      statusBox,
+      formArea
+    ],
+    footer: footerBtn
+  });
+
+  return { el: screen.el, title: 'Identity Verification' };
+}, { auth: 'login' });
+
+/* ---------- Sindhi Samaj, Panchayat & Roots Community Selector Screen (Checkbox Categories) ---------- */
+Router.register('communitySelect', function () {
+  var p = State.profile;
+
+  // Initialize independent sets with stable IDs
+  var initialP = Array.isArray(p.panchayatIds) && p.panchayatIds.length ? p.panchayatIds : (p.panchayatId ? [p.panchayatId] : []);
+  var initialA = Array.isArray(p.ancestralOriginIds) && p.ancestralOriginIds.length ? p.ancestralOriginIds : (p.ancestralOriginId ? [p.ancestralOriginId] : []);
+  var initialS = Array.isArray(p.subCommunityIds) && p.subCommunityIds.length ? p.subCommunityIds : (p.subCommunityId ? [p.subCommunityId] : []);
+
+  var selectedPanchayats = new Set(initialP);
+  var selectedAncestral = new Set(initialA);
+  var selectedSubComms = new Set(initialS);
+
+  var searchQ = { panchayat: '', ancestral: '', subcomm: '' };
+
+  var summaryBox = h('div', { class: 'community-summary-card' });
+
+  function renderSummary() {
+    clearNode(summaryBox);
+    var pCount = selectedPanchayats.size;
+    var aCount = selectedAncestral.size;
+    var sCount = selectedSubComms.size;
+    var totalCount = pCount + aCount + sCount;
+
+    var head = h('div', { class: 'comm-summary-head' }, [
+      h('h3', { text: 'Your Community Affiliations' }),
+      h('span', { class: 'comm-selection-count', text: totalCount + ' Selected (Panchayats: ' + pCount + ', Ancestral: ' + aCount + ', Lineages: ' + sCount + ')' })
+    ]);
+    summaryBox.appendChild(head);
+
+    // Render interactive pill chips with removal buttons
+    var pillsWrap = h('div', { style: 'display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;' });
+
+    if (totalCount === 0) {
+      pillsWrap.appendChild(h('span', { class: 'comm-pill muted-pill', text: 'No affiliations selected yet. Select checkboxes in any category below.' }));
+    } else {
+      selectedPanchayats.forEach(function (id) {
+        var obj = getPanchayatById(id);
+        if (!obj) return;
+        var pill = h('span', { class: 'comm-pill on' }, [
+          h('strong', { text: '🏛️ ' + obj.name }),
+          h('span', { class: 'comm-sub', text: ' (' + obj.city + ')' }),
+          h('button', { type: 'button', class: 'comm-pill-remove', 'aria-label': 'Remove ' + obj.name, onClick: function () {
+            selectedPanchayats.delete(id);
+            renderSummary();
+            renderPanchayats();
+          } }, '✕')
+        ]);
+        pillsWrap.appendChild(pill);
+      });
+
+      selectedAncestral.forEach(function (id) {
+        var obj = getAncestralOriginById(id);
+        if (!obj) return;
+        var pill = h('span', { class: 'comm-pill on' }, [
+          h('strong', { text: '📍 ' + obj.name }),
+          h('span', { class: 'comm-sub', text: ' [' + (obj.hindiName || '') + ']' }),
+          h('button', { type: 'button', class: 'comm-pill-remove', 'aria-label': 'Remove ' + obj.name, onClick: function () {
+            selectedAncestral.delete(id);
+            renderSummary();
+            renderAncestral();
+          } }, '✕')
+        ]);
+        pillsWrap.appendChild(pill);
+      });
+
+      selectedSubComms.forEach(function (id) {
+        var obj = getSubCommunityById(id);
+        if (!obj) return;
+        var pill = h('span', { class: 'comm-pill on' }, [
+          h('strong', { text: '🌿 ' + obj.name }),
+          h('span', { class: 'comm-sub', text: ' [' + (obj.hindiName || '') + ']' }),
+          h('button', { type: 'button', class: 'comm-pill-remove', 'aria-label': 'Remove ' + obj.name, onClick: function () {
+            selectedSubComms.delete(id);
+            renderSummary();
+            renderSubComms();
+          } }, '✕')
+        ]);
+        pillsWrap.appendChild(pill);
+      });
+    }
+
+    summaryBox.appendChild(pillsWrap);
+  }
+
+  // Section A: Panchayats
+  var secAContainer = h('section', { class: 'comm-section-card' });
+  var listA = h('div', { class: 'comm-checkbox-list' });
+
+  function renderPanchayats() {
+    clearNode(listA);
+    var q = searchQ.panchayat.trim().toLowerCase();
+    var filtered = SINDHI_DIRECTORY.panchayats.filter(function (it) {
+      if (!q) return true;
+      return it.name.toLowerCase().includes(q) ||
+        (it.hindiName && it.hindiName.includes(q)) ||
+        it.city.toLowerCase().includes(q) ||
+        it.state.toLowerCase().includes(q) ||
+        (it.aliases && it.aliases.some(function (al) { return al.toLowerCase().includes(q); }));
+    });
+
+    if (filtered.length === 0) {
+      listA.appendChild(h('div', { class: 'empty-inline', text: 'No Panchayats found matching "' + q + '".' }));
+      return;
+    }
+
+    filtered.forEach(function (it) {
+      var isChecked = selectedPanchayats.has(it.id);
+      var cb = h('input', { type: 'checkbox', id: 'cb-' + it.id });
+      cb.checked = isChecked;
+      cb.addEventListener('change', function () {
+        if (cb.checked) selectedPanchayats.add(it.id);
+        else selectedPanchayats.delete(it.id);
+        renderSummary();
+      });
+
+      var label = h('label', { class: 'comm-check-row ' + (isChecked ? 'checked' : ''), for: 'cb-' + it.id }, [
+        cb,
+        h('div', { class: 'comm-check-body' }, [
+          h('div', { class: 'comm-check-top' }, [
+            h('strong', { text: it.name }),
+            h('span', { class: 'comm-status-badge verified', text: '✓ Verified' })
+          ]),
+          h('div', { class: 'comm-check-dev', text: it.hindiName }),
+          h('div', { class: 'comm-check-meta' }, [
+            h('span', { text: '📍 ' + it.city + ', ' + it.state }),
+            h('span', { class: 'comm-type-pill', text: it.type })
+          ]),
+          it.aliases && it.aliases.length ? h('div', { class: 'comm-check-alias', text: 'Aliases: ' + it.aliases.join(', ') }) : null
+        ])
+      ]);
+      listA.appendChild(label);
+    });
+  }
+
+  var searchInputA = h('input', {
+    type: 'search', class: 'input comm-section-search',
+    placeholder: 'Search Panchayats by name, city (Jaipur, Ajmer, Ulhasnagar, Mumbai, Indore...) or alias...',
+    'aria-label': 'Search Panchayats'
+  });
+  searchInputA.addEventListener('input', debounce(function () {
+    searchQ.panchayat = searchInputA.value;
+    renderPanchayats();
+  }, 100));
+
+  secAContainer.appendChild(h('div', { class: 'comm-section-header' }, [
+    h('div', [
+      h('h3', { text: '🏛️ Category A: Sindhi Panchayat / Samaj Organizations' }),
+      h('p', { class: 'muted', text: 'Optional • Check one or more organizations you or your family belong to (e.g. local city council and/or ancestral Biradari Panchayat).' })
+    ]),
+    h('span', { class: 'comm-badge-count', text: SINDHI_DIRECTORY.panchayats.length + ' Registered' })
+  ]));
+  secAContainer.appendChild(searchInputA);
+  secAContainer.appendChild(listA);
+
+  // Section B: Ancestral Places in Sindh
+  var secBContainer = h('section', { class: 'comm-section-card' });
+  var listB = h('div', { class: 'comm-checkbox-list' });
+
+  function renderAncestral() {
+    clearNode(listB);
+    var q = searchQ.ancestral.trim().toLowerCase();
+    var filtered = SINDHI_DIRECTORY.ancestralOrigins.filter(function (it) {
+      if (!q) return true;
+      return it.name.toLowerCase().includes(q) ||
+        (it.hindiName && it.hindiName.includes(q)) ||
+        (it.region && it.region.toLowerCase().includes(q)) ||
+        (it.desc && it.desc.toLowerCase().includes(q)) ||
+        (it.surnames && it.surnames.some(function (sn) { return sn.toLowerCase().includes(q); }));
+    });
+
+    if (filtered.length === 0) {
+      listB.appendChild(h('div', { class: 'empty-inline', text: 'No ancestral places found matching "' + q + '".' }));
+      return;
+    }
+
+    filtered.forEach(function (it) {
+      var isChecked = selectedAncestral.has(it.id);
+      var cb = h('input', { type: 'checkbox', id: 'cb-' + it.id });
+      cb.checked = isChecked;
+      cb.addEventListener('change', function () {
+        if (cb.checked) selectedAncestral.add(it.id);
+        else selectedAncestral.delete(it.id);
+        renderSummary();
+      });
+
+      var label = h('label', { class: 'comm-check-row ' + (isChecked ? 'checked' : ''), for: 'cb-' + it.id }, [
+        cb,
+        h('div', { class: 'comm-check-body' }, [
+          h('div', { class: 'comm-check-top' }, [
+            h('strong', { text: it.name }),
+            h('span', { class: 'comm-type-pill', text: it.region })
+          ]),
+          h('div', { class: 'comm-check-dev', text: it.hindiName }),
+          h('div', { class: 'comm-check-desc', text: it.desc }),
+          it.surnames && it.surnames.length ? h('div', { class: 'comm-check-alias', text: 'Common Surnames: ' + it.surnames.join(', ') }) : null
+        ])
+      ]);
+      listB.appendChild(label);
+    });
+  }
+
+  var searchInputB = h('input', {
+    type: 'search', class: 'input comm-section-search',
+    placeholder: 'Search ancestral places (Jacobabad, Shikarpur, Hyderabad, Larkana, Sukkur, Rohri...)...',
+    'aria-label': 'Search Ancestral Places'
+  });
+  searchInputB.addEventListener('input', debounce(function () {
+    searchQ.ancestral = searchInputB.value;
+    renderAncestral();
+  }, 100));
+
+  secBContainer.appendChild(h('div', { class: 'comm-section-header' }, [
+    h('div', [
+      h('h3', { text: '📍 Category B: Ancestral Place of Origin in Sindh (Pakistan)' }),
+      h('p', { class: 'muted', text: 'Optional • Check one or more historic hometowns/divisions where your family originated in historical Sindh.' })
+    ]),
+    h('span', { class: 'comm-badge-count', text: SINDHI_DIRECTORY.ancestralOrigins.length + ' Researched' })
+  ]));
+  secBContainer.appendChild(searchInputB);
+  secBContainer.appendChild(listB);
+
+  // Section C: Lineages & Subgroups
+  var secCContainer = h('section', { class: 'comm-section-card' });
+  var listC = h('div', { class: 'comm-checkbox-list' });
+
+  function renderSubComms() {
+    clearNode(listC);
+    var q = searchQ.subcomm.trim().toLowerCase();
+    var filtered = SINDHI_DIRECTORY.subCommunities.filter(function (it) {
+      if (!q) return true;
+      return it.name.toLowerCase().includes(q) ||
+        (it.hindiName && it.hindiName.includes(q)) ||
+        (it.type && it.type.toLowerCase().includes(q)) ||
+        (it.desc && it.desc.toLowerCase().includes(q));
+    });
+
+    if (filtered.length === 0) {
+      listC.appendChild(h('div', { class: 'empty-inline', text: 'No lineages found matching "' + q + '".' }));
+      return;
+    }
+
+    filtered.forEach(function (it) {
+      var isChecked = selectedSubComms.has(it.id);
+      var cb = h('input', { type: 'checkbox', id: 'cb-' + it.id });
+      cb.checked = isChecked;
+      cb.addEventListener('change', function () {
+        if (cb.checked) selectedSubComms.add(it.id);
+        else selectedSubComms.delete(it.id);
+        renderSummary();
+      });
+
+      var label = h('label', { class: 'comm-check-row ' + (isChecked ? 'checked' : ''), for: 'cb-' + it.id }, [
+        cb,
+        h('div', { class: 'comm-check-body' }, [
+          h('div', { class: 'comm-check-top' }, [
+            h('strong', { text: it.name }),
+            h('span', { class: 'comm-type-pill', text: it.type })
+          ]),
+          h('div', { class: 'comm-check-dev', text: it.hindiName }),
+          h('div', { class: 'comm-check-desc', text: it.desc })
+        ])
+      ]);
+      listC.appendChild(label);
+    });
+  }
+
+  var searchInputC = h('input', {
+    type: 'search', class: 'input comm-section-search',
+    placeholder: 'Search traditional lineages (Amil, Bhaiband, Sahiti, Larai, Uttaradi, Radhaswami...)...',
+    'aria-label': 'Search Traditional Lineages'
+  });
+  searchInputC.addEventListener('input', debounce(function () {
+    searchQ.subcomm = searchInputC.value;
+    renderSubComms();
+  }, 100));
+
+  secCContainer.appendChild(h('div', { class: 'comm-section-header' }, [
+    h('div', [
+      h('h3', { text: '🌿 Category C: Traditional Community Lineage & Cultural Identity' }),
+      h('p', { class: 'muted', text: 'Optional • Check traditional socio-cultural lineage(s) or spiritual faith traditions.' })
+    ]),
+    h('span', { class: 'comm-badge-count', text: SINDHI_DIRECTORY.subCommunities.length + ' Researched' })
+  ]));
+  secCContainer.appendChild(searchInputC);
+  secCContainer.appendChild(listC);
+
+  // Paint Initial
+  renderSummary();
+  renderPanchayats();
+  renderAncestral();
+  renderSubComms();
+
+  function proceed() {
+    p.panchayatIds = Array.from(selectedPanchayats);
+    p.ancestralOriginIds = Array.from(selectedAncestral);
+    p.subCommunityIds = Array.from(selectedSubComms);
+    p.panchayatId = p.panchayatIds[0] || '';
+    p.ancestralOriginId = p.ancestralOriginIds[0] || '';
+    p.subCommunityId = p.subCommunityIds[0] || '';
+    if (Bridge.saveProfileData) Bridge.saveProfileData();
+
+    if (State.editing) {
+      State.editing = false;
+      Router.backBy(Router.index() - State.editBase);
+    } else {
+      Router.go('choice');
+    }
+  }
+
+  var continueBtn = bigButton('Confirm Selections & Proceed', proceed);
+
+  var screen = Screen({
+    back: true,
+    body: [
+      h('h1', { class: 'q-title', text: 'Sindhi Samaj Community Affiliations' }),
+      h('p', { class: 'q-helper', text: 'Select your affiliations independently using the separate checkbox categories below.' }),
+      summaryBox,
+      secAContainer,
+      secBContainer,
+      secCContainer
+    ],
+    footer: continueBtn
+  });
+
+  return { el: screen.el, title: 'Community Affiliations' };
+}, { auth: 'login' });
 
 /* ---------- Choice: manual or from biodata ---------- */
 Router.register('choice', function () {
@@ -1215,23 +2034,97 @@ function listText(list) { return list && list.length ? list.join(', ') : 'Open t
 function reviewSections() {
   var p = State.profile;
   var age = calcAge(p.dobDay, p.dobMonth, p.dobYear);
-  var prefs = p.prefs;
-  function pref(key) { return prefs.open[key] ? 'Open to all' : listText(prefs[key]); }
+  var prefs = p.prefs || blankPrefs();
+  function pref(key) { return prefs.open && prefs.open[key] ? 'Open to all' : listText(prefs[key] || []); }
+
+  var pIds = Array.isArray(p.panchayatIds) && p.panchayatIds.length ? p.panchayatIds : (p.panchayatId ? [p.panchayatId] : []);
+  var aIds = Array.isArray(p.ancestralOriginIds) && p.ancestralOriginIds.length ? p.ancestralOriginIds : (p.ancestralOriginId ? [p.ancestralOriginId] : []);
+  var sIds = Array.isArray(p.subCommunityIds) && p.subCommunityIds.length ? p.subCommunityIds : (p.subCommunityId ? [p.subCommunityId] : []);
+
+  var pNames = pIds.map(function (id) { var o = getPanchayatById(id); return o ? o.name + ' (' + o.city + ')' : id; }).join('; ') || 'Not selected';
+  var aNames = aIds.map(function (id) { var o = getAncestralOriginById(id); return o ? o.name + ' [' + (o.hindiName || '') + ']' : id; }).join('; ') || 'Not selected';
+  var sNames = sIds.map(function (id) { var o = getSubCommunityById(id); return o ? o.name + ' [' + (o.hindiName || '') + ']' : id; }).join('; ') || 'Not selected';
+
+  var aadhaarLabel = 'Not Verified (Skipped)';
+  if (p.aadhaarVerified) {
+    if (p.aadhaarMethod === 'digilocker') aadhaarLabel = '✓ DigiLocker Verified (Govt of India)';
+    else if (p.aadhaarMethod === 'offline_xml') aadhaarLabel = '✓ Offline e-KYC XML Verified (Paperless)';
+    else if (p.aadhaarMethod === 'manual_review') aadhaarLabel = '⏳ Alternative Manual ID (Pending Review)';
+    else aadhaarLabel = '✓ Verified (' + (p.aadhaarMethod || 'e-KYC') + ')';
+  }
+
+  var brotherText = (p.brothers || 0) + ' brother(s)';
+  if (p.brothersList && p.brothersList.length) {
+    brotherText += ' (' + p.brothersList.map(function (b, idx) {
+      return (b.name || 'Brother ' + (idx + 1)) + ' [' + b.maritalStatus + (b.maritalStatus === 'Married' && b.wifeName ? ' with ' + b.wifeName : '') + ']';
+    }).join('; ') + ')';
+  }
+
+  var sisterText = (p.sisters || 0) + ' sister(s)';
+  if (p.sistersList && p.sistersList.length) {
+    sisterText += ' (' + p.sistersList.map(function (s, idx) {
+      return (s.name || 'Sister ' + (idx + 1)) + ' [' + s.maritalStatus + (s.maritalStatus === 'Married' && s.husbandName ? ' m. ' + s.husbandName + (s.inlawsCity ? ', ' + s.inlawsCity : '') : '') + ']';
+    }).join('; ') + ')';
+  }
+
   return [
+    { title: 'Identity & Aadhaar Verification', step: 'aadhaar', rows: [
+      ['Aadhaar Status', aadhaarLabel],
+      ['Verification Method', p.aadhaarMethod || 'None'],
+      ['Simulated Ref', p.aadhaarMaskedRef || (p.aadhaarVerified ? 'XXXX-XXXX-9012' : 'None')],
+      ['Notice', 'Prototype demonstration mode (no real UIDAI records stored)']
+    ] },
+    { title: 'Community & Roots', step: 'communitySelect', rows: [
+      ['Community', 'Sindhi'],
+      ['Panchayat(s) / Samaj', pNames],
+      ['Ancestral Origin(s) in Sindh', aNames],
+      ['Traditional Lineage(s)', sNames],
+      ['Community Preference', show(p.casteRestriction)],
+      ['Religion', show(p.religion)],
+      ['Mother tongue', show(p.motherTongue)]
+    ] },
     { title: 'Profile for', step: 'profileFor', rows: [['Created for', show(p.profileFor)], ['Gender', show(cap(p.gender))]] },
     { title: 'Personal details', step: 'name', rows: [
       ['Name', show((p.firstName + ' ' + p.lastName).trim())],
       ['Date of birth', p.dobDay ? p.dobDay + ' ' + p.dobMonth + ' ' + p.dobYear + (age !== null ? ' (' + age + ' years)' : '') : 'Not added'],
-      ['Marital status', show(p.maritalStatus)], ['Height', fmtHeight(p.heightIn) + ' (' + cmFromInches(p.heightIn) + ' cm)']
+      ['Weekday of birth', show(p.birthWeekday)],
+      ['Time & Place of birth', (p.birthTime ? p.birthTime + ' ' + (p.birthAmPm || '') : 'Not added') + (p.birthPlace ? ' in ' + p.birthPlace : '')],
+      ['Marital status', show(p.maritalStatus) + (p.previousMarriageDuration ? ' (Prev: ' + p.previousMarriageDuration + ')' : '') + (p.childrenCount > 0 ? ', ' + p.childrenCount + ' children' : '')],
+      ['Height & Weight', fmtHeight(p.heightIn) + ' (' + cmFromInches(p.heightIn) + ' cm)' + (p.weightKg ? ', ' + p.weightKg + ' kg' : '')]
     ] },
-    { title: 'Community', step: 'community', rows: [['Community', 'Sindhi'], ['Religion', show(p.religion)], ['Mother tongue', show(p.motherTongue)]] },
-    { title: 'Location', step: 'location', rows: [['Country', show(p.country)], ['State', show(p.state)], ['City', show(p.city)], ['Residency', show(p.residency)], ['Living with family', show(p.livingWithFamily)]] },
-    { title: 'Education', step: 'education', rows: [['Qualification', show(p.education)], ['College', show(p.college)], ['Field of study', show(p.fieldOfStudy)]] },
-    { title: 'Work', step: 'work', rows: [['Employment', show(p.employment)], ['Profession', show(p.profession)], ['Company', show(p.company)], ['Annual income', show(p.income)]] },
-    { title: 'Lifestyle', step: 'lifestyle', rows: [['Diet', show(p.diet)], ['Drinking', show(p.drinking)], ['Smoking', show(p.smoking)], ['Hobbies', p.hobbies.length ? p.hobbies.join(', ') : 'Not added']] },
-    { title: 'Horoscope', step: 'horoscope', rows: [['Time of birth', show(p.birthTime)], ['Place of birth', show(p.birthPlace)], ['Manglik', show(p.manglik)], ['Rashi', show(p.rashi)], ['Nakshatra', show(p.nakshatra)], ['Kundali', show(p.kundali)]] },
-    { title: 'Family', step: 'family', rows: [['Father', show(p.fatherOcc)], ['Mother', show(p.motherOcc)], ['Brothers', String(p.brothers)], ['Sisters', String(p.sisters)], ['Family type', show(p.familyType)], ['Family values', show(p.familyValues)], ['Family income', show(p.familyIncome)], ['Native place', show(p.nativePlace)]] },
-    { title: 'About', step: 'about', rows: [['About', show(p.about)]] },
+    { title: 'Location & Housing', step: 'location', rows: [
+      ['Country & City', show(p.city) + ', ' + show(p.state) + ', ' + show(p.country)],
+      ['Residential Address', show(p.residentialAddress)],
+      ['House / Flat Size', show(p.houseSize)],
+      ['Property Status', show(p.houseType)],
+      ['Residency', show(p.residency)],
+      ['Living with family', show(p.livingWithFamily)]
+    ] },
+    { title: 'Education & Career', step: 'education', rows: [
+      ['Qualification', show(p.education)], ['College', show(p.college)], ['Field of study', show(p.fieldOfStudy)],
+      ['Employment', show(p.employment)], ['Profession', show(p.profession)], ['Company', show(p.company)], ['Annual income', show(p.income)]
+    ] },
+    { title: 'Family Tree & Siblings', step: 'family', rows: [
+      ['Father', (p.fatherName ? p.fatherName + ' - ' : '') + show(p.fatherOcc) + (p.fatherIncome ? ' (' + p.fatherIncome + ')' : '')],
+      ['Father Mobile', p.fatherMobile ? UI.maskPhone(p.fatherMobile) + ' (Private)' : 'Not shared'],
+      ['Mother', (p.motherName ? p.motherName + ' - ' : '') + show(p.motherOcc)],
+      ['Mother Mobile', p.motherMobile ? UI.maskPhone(p.motherMobile) + ' (Private)' : 'Not shared'],
+      ['Grandfather (दादाजी)', show(p.dadaName)],
+      ['Grandmother (दादीजी)', show(p.dadiName)],
+      ['Brothers', brotherText],
+      ['Sisters', sisterText],
+      ['Family type & values', show(p.familyType) + ', ' + show(p.familyValues)],
+      ['Native place', show(p.nativePlace)]
+    ] },
+    { title: 'Lifestyle & Hobbies', step: 'lifestyle', rows: [
+      ['Diet', show(p.diet)], ['Drinking', show(p.drinking)], ['Smoking', show(p.smoking)],
+      ['Hobbies', p.hobbies && p.hobbies.length ? p.hobbies.join(', ') : 'Not added']
+    ] },
+    { title: 'Horoscope', step: 'horoscope', rows: [
+      ['Time & Place', (p.birthTime || 'Not added') + (p.birthPlace ? ' in ' + p.birthPlace : '')],
+      ['Manglik', show(p.manglik)], ['Rashi', show(p.rashi)], ['Nakshatra', show(p.nakshatra)], ['Kundali', show(p.kundali)]
+    ] },
+    { title: 'About Candidate', step: 'about', rows: [['About', show(p.about)]] },
     { title: 'Partner preferences', step: 'partner', rows: [
       ['Age', prefs.ageMin + ' to ' + prefs.ageMax + ' years'], ['Height', fmtHeight(prefs.heightMin) + ' to ' + fmtHeight(prefs.heightMax)],
       ['Marital status', pref('marital')], ['Religion', pref('religion')], ['Education', pref('education')], ['Profession', pref('profession')],
@@ -2399,17 +3292,87 @@ function profileView(p, own) {
   function paintContact() { contactLine.textContent = own || (a.revealed && a.revealed.indexOf(p.id) !== -1) ? fmtPhone(p.contactNumber) : UI.maskPhone(p.contactNumber); }
   paintContact();
 
+  var pIds = Array.isArray(p.panchayatIds) && p.panchayatIds.length ? p.panchayatIds : (p.panchayatId ? [p.panchayatId] : []);
+  var aIds = Array.isArray(p.ancestralOriginIds) && p.ancestralOriginIds.length ? p.ancestralOriginIds : (p.ancestralOriginId ? [p.ancestralOriginId] : []);
+  var sIds = Array.isArray(p.subCommunityIds) && p.subCommunityIds.length ? p.subCommunityIds : (p.subCommunityId ? [p.subCommunityId] : []);
+
+  var pNames = pIds.map(function (id) { var o = getPanchayatById(id); return o ? o.name + ' (' + o.city + ')' : id; }).join('; ') || (p.panchayatId || 'Sindhi Central Panchayat');
+  var aNames = aIds.map(function (id) { var o = getAncestralOriginById(id); return o ? o.name + ' [' + (o.hindiName || '') + ']' : id; }).join('; ') || (p.ancestralOriginId || 'Sindh');
+  var sNames = sIds.map(function (id) { var o = getSubCommunityById(id); return o ? o.name + ' [' + (o.hindiName || '') + ']' : id; }).join('; ') || (p.subCommunityId || 'Sindhi Lineage');
+
+  var aadhaarLabel = 'Pending / Not Verified';
+  if (p.aadhaarVerified) {
+    if (p.aadhaarMethod === 'digilocker') aadhaarLabel = '✓ DigiLocker Verified';
+    else if (p.aadhaarMethod === 'offline_xml') aadhaarLabel = '✓ Offline e-KYC XML Verified';
+    else if (p.aadhaarMethod === 'manual_review') aadhaarLabel = '⏳ Alternative Manual ID (Pending Review)';
+    else aadhaarLabel = '✓ Verified (' + (p.aadhaarMethod || 'e-KYC') + ')';
+  }
+
+  var brotherText = String(p.brothers || 0);
+  if (p.brothersList && p.brothersList.length) {
+    brotherText += ' (' + p.brothersList.map(function (b, idx) {
+      return (b.name || 'Brother ' + (idx + 1)) + ' - ' + b.maritalStatus + (b.maritalStatus === 'Married' && b.wifeName ? ' w/ ' + b.wifeName : '');
+    }).join('; ') + ')';
+  }
+
+  var sisterText = String(p.sisters || 0);
+  if (p.sistersList && p.sistersList.length) {
+    sisterText += ' (' + p.sistersList.map(function (s, idx) {
+      return (s.name || 'Sister ' + (idx + 1)) + ' - ' + s.maritalStatus + (s.maritalStatus === 'Married' && s.husbandName ? ' m. ' + s.husbandName + (s.inlawsCity ? ', ' + s.inlawsCity : '') : '');
+    }).join('; ') + ')';
+  }
+
   var sections = [
     ['about', 'About', h('section', { class: 'card info-card', id: 'sec-about' }, [h('h3', { text: 'About ' + p.firstName }), h('p', { text: p.about })])],
-    ['basic', 'Basic', infoCard('sec-basic', 'Basic details', [['Age', p.age + ' years'], ['Height', fmtHeight(p.heightIn) + ' (' + cmFromInches(p.heightIn) + ' cm)'], ['Marital status', p.maritalStatus]].concat(trusted ? [['Profile ID', p.profileCode]] : [], [['Location', p.city + ', ' + p.state + ', ' + p.country]]))],
-    ['community', 'Community', infoCard('sec-community', 'Community and horoscope', [['Community', 'Sindhi'], ['Religion', p.religion], ['Mother tongue', p.motherTongue], ['Manglik', p.manglik], ['Rashi', p.rashi], ['Nakshatra', p.nakshatra], ['Time of birth', p.birthTime], ['Place of birth', p.birthPlace]])],
-    ['work', 'Education and work', infoCard('sec-work', 'Education and work', [['Qualification', p.education], ['College', p.college], ['Field of study', p.fieldOfStudy], ['Employment', p.employment], ['Profession', p.profession], ['Company', p.company], ['Annual income', p.income]])],
+    ['basic', 'Basic', infoCard('sec-basic', 'Basic details', [
+      ['Age', p.age + ' years'],
+      ['Height', fmtHeight(p.heightIn) + ' (' + cmFromInches(p.heightIn) + ' cm)'],
+      ['Weight', p.weightKg ? p.weightKg + ' kg' : 'Not shared'],
+      ['Marital status', p.maritalStatus + (p.previousMarriageDuration ? ' (Prev: ' + p.previousMarriageDuration + ')' : '') + (p.childrenCount > 0 ? ', ' + p.childrenCount + ' children' : '')]
+    ].concat(trusted ? [['Profile ID', p.profileCode]] : [], [
+      ['Location', p.city + ', ' + p.state + ', ' + p.country],
+      ['Weekday of birth', p.birthWeekday || 'Not shared'],
+      ['Time & Place of birth', (p.birthTime || 'Not shared') + (p.birthPlace ? ' in ' + p.birthPlace : '')]
+    ]))],
+    ['community', 'Community', infoCard('sec-community', 'Community and Roots', [
+      ['Community', 'Sindhi'],
+      ['Panchayat(s) / Samaj', pNames],
+      ['Ancestral Origin(s) in Sindh', aNames],
+      ['Traditional Lineage(s)', sNames],
+      ['Community Preference', p.casteRestriction || 'Sindhi Samaj Only'],
+      ['Aadhaar Status', aadhaarLabel],
+      ['Religion', p.religion],
+      ['Mother tongue', p.motherTongue],
+      ['Manglik', p.manglik],
+      ['Rashi', p.rashi],
+      ['Nakshatra', p.nakshatra]
+    ])],
+    ['housing', 'Housing & Residence', infoCard('sec-housing', 'Property & Residence', [
+      ['City & State', p.city + ', ' + p.state],
+      ['House / Flat Size', p.houseSize || 'Not shared'],
+      ['Property Status', p.houseType || 'Owned'],
+      ['Living with family', p.livingWithFamily ? 'Yes' : 'No']
+    ].concat(trusted && p.residentialAddress ? [['Address', p.residentialAddress]] : []))],
+    ['work', 'Education and work', infoCard('sec-work', 'Education and work', [
+      ['Qualification', p.education], ['College', p.college], ['Field of study', p.fieldOfStudy],
+      ['Employment', p.employment], ['Profession', p.profession], ['Company', p.company], ['Annual income', p.income]
+    ])],
     ['lifestyle', 'Lifestyle', h('section', { class: 'card info-card', id: 'sec-lifestyle' }, [
       h('h3', { text: 'Lifestyle' }),
       h('dl', { class: 'info-list' }, [['Diet', p.diet], ['Drinking', p.drinking], ['Smoking', p.smoking]].map(function (row) { return h('div', { class: 'info-row' }, [h('dt', { text: row[0] }), h('dd', { text: row[1] })]); })),
       h('div', { class: 'chips hobby-chips' }, p.hobbies.map(function (hobby) { return h('span', { class: 'chip static-chip', text: hobby }); }))
     ])],
-    ['family', 'Family', infoCard('sec-family', 'Family', [['Father', p.fatherOcc], ['Mother', p.motherOcc], ['Brothers', String(p.brothers)], ['Sisters', String(p.sisters)], ['Family type', p.familyType], ['Family values', p.familyValues], ['Native place', p.nativePlace]])],
+    ['family', 'Family', infoCard('sec-family', 'Family and Siblings', [
+      ['Father', (p.fatherName ? p.fatherName + ' (' : '') + (p.fatherOcc || 'Not shared') + (p.fatherName ? ')' : '') + (p.fatherIncome ? ' • ' + p.fatherIncome : '')],
+      ['Mother', (p.motherName ? p.motherName + ' (' : '') + (p.motherOcc || 'Homemaker') + (p.motherName ? ')' : '')],
+      ['Grandfather (दादाजी)', p.dadaName || 'Not shared'],
+      ['Grandmother (दादीजी)', p.dadiName || 'Not shared'],
+      ['Brothers', brotherText],
+      ['Sisters', sisterText],
+      ['Family type', p.familyType],
+      ['Family values', p.familyValues],
+      ['Native place', p.nativePlace]
+    ])],
     ['partner', 'Partner preferences', own || State.status === 'none' ? infoCard('sec-partner', own ? 'Your partner preferences' : 'Partner preferences', matches.map(function (m) { return [m.label, m.want]; })) : h('section', { class: 'card info-card', id: 'sec-partner' }, [
       h('h3', { text: 'Partner preferences' }),
       h('p', { class: 'match-line' }, [h('strong', { text: 'You match ' + matched + ' of ' + matches.length + ' preferences' })]),

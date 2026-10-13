@@ -308,7 +308,8 @@ function openViewModal(profileId) {
           <strong style="color: var(--maroon); display: block; margin-bottom: 0.3rem;">Personal & Location</strong>
           <div><strong>City:</strong> ${escapeHtml(profile.city || 'N/A')}</div>
           <div><strong>Height:</strong> ${escapeHtml(profile.height || 'N/A')}</div>
-          <div><strong>Religion / Community:</strong> ${escapeHtml(profile.religionDetails || 'N/A')}</div>
+          <div><strong>Marital Status:</strong> ${escapeHtml(profile.maritalStatus || 'N/A')}</div>
+          <div><strong>Religion / Community:</strong> ${escapeHtml(profile.religionDetails || 'Hindu - Sindhi')}</div>
         </div>
 
         <div>
@@ -319,11 +320,89 @@ function openViewModal(profileId) {
         </div>
       </div>
 
+      <!-- Sindhi Community & Verification Directory -->
       <div style="padding-top: 0.75rem; border-top: 1px dashed var(--border); font-size: 0.9rem;">
-        <strong style="color: var(--maroon); display: block; margin-bottom: 0.3rem;">Family Overview</strong>
-        <div><strong>Father:</strong> ${escapeHtml(profile.fatherName || 'N/A')} (${escapeHtml(profile.fatherOccupation || 'N/A')})</div>
-        <div><strong>Mother:</strong> ${escapeHtml(profile.motherName || 'N/A')}</div>
-        <div><strong>Siblings:</strong> ${escapeHtml(profile.siblings || 'N/A')}</div>
+        <strong style="color: var(--maroon); display: block; margin-bottom: 0.3rem;">🏛️ Sindhi Samaj & Roots Directory</strong>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+          <div>
+            <strong>Panchayat(s):</strong> 
+            ${(() => {
+              const pIds = Array.isArray(profile.panchayatIds) && profile.panchayatIds.length ? profile.panchayatIds : (profile.panchayatId ? [profile.panchayatId] : []);
+              const pNames = pIds.map(id => {
+                const pObj = typeof getPanchayatById === 'function' ? getPanchayatById(id) : null;
+                return pObj ? pObj.name + ' (' + pObj.city + ')' : id;
+              }).join('; ');
+              return escapeHtml(pNames || (profile.panchayatId || 'Sindhi Central Panchayat'));
+            })()}
+          </div>
+          <div>
+            <strong>Ancestral Place(s) (Sindh):</strong> 
+            ${(() => {
+              const aIds = Array.isArray(profile.ancestralOriginIds) && profile.ancestralOriginIds.length ? profile.ancestralOriginIds : (profile.ancestralOriginId ? [profile.ancestralOriginId] : []);
+              const aNames = aIds.map(id => {
+                const aObj = typeof getAncestralOriginById === 'function' ? getAncestralOriginById(id) : null;
+                return aObj ? aObj.name + ' [' + (aObj.hindiName || '') + ']' : id;
+              }).join('; ');
+              return escapeHtml(aNames || (profile.ancestralOriginId || 'Sindh'));
+            })()}
+          </div>
+          <div>
+            <strong>Lineage / Subgroup:</strong> 
+            ${(() => {
+              const sIds = Array.isArray(profile.subCommunityIds) && profile.subCommunityIds.length ? profile.subCommunityIds : (profile.subCommunityId ? [profile.subCommunityId] : []);
+              const sNames = sIds.map(id => {
+                const sObj = typeof getSubCommunityById === 'function' ? getSubCommunityById(id) : null;
+                return sObj ? sObj.name + ' [' + (sObj.hindiName || '') + ']' : id;
+              }).join('; ');
+              return escapeHtml(sNames || (profile.subCommunityId || 'Sindhi'));
+            })()}
+          </div>
+          <div>
+            <strong>Caste Preference:</strong> ${escapeHtml(profile.casteRestriction || 'Sindhi Samaj Only')}
+          </div>
+          <div>
+            <strong>Aadhaar Verification Status:</strong> 
+            <span class="badge ${profile.aadhaarVerified ? 'badge-published' : 'badge-draft'}">
+              ${(() => {
+                if (!profile.aadhaarVerified) return 'Not Verified';
+                if (profile.aadhaarMethod === 'digilocker') return '✓ DigiLocker Verified';
+                if (profile.aadhaarMethod === 'offline_xml') return '✓ Offline e-KYC Verified';
+                if (profile.aadhaarMethod === 'manual_review') return '⏳ Manual ID (Review)';
+                return '✓ Verified (' + (profile.aadhaarMethod || 'e-KYC') + ')';
+              })()}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Property & Housing Details -->
+      <div style="padding-top: 0.75rem; border-top: 1px dashed var(--border); font-size: 0.9rem;">
+        <strong style="color: var(--maroon); display: block; margin-bottom: 0.3rem;">🏠 Property & Housing (Page 1 & 2 Biodata)</strong>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+          <div><strong>House / Flat Size:</strong> ${escapeHtml(profile.houseSize || 'N/A')}</div>
+          <div><strong>Property Type:</strong> ${escapeHtml(profile.houseType || 'Owned')}</div>
+          <div style="grid-column: span 2;"><strong>Residential Address:</strong> ${escapeHtml(profile.residentialAddress || profile.city || 'N/A')}</div>
+        </div>
+      </div>
+
+      <!-- Extended Family Overview -->
+      <div style="padding-top: 0.75rem; border-top: 1px dashed var(--border); font-size: 0.9rem;">
+        <strong style="color: var(--maroon); display: block; margin-bottom: 0.3rem;">Family Overview & Grandparents</strong>
+        <div><strong>Grandfather (दादाजी):</strong> ${escapeHtml(profile.dadaName || 'N/A')}</div>
+        <div><strong>Grandmother (दादीजी):</strong> ${escapeHtml(profile.dadiName || 'N/A')}</div>
+        <div><strong>Father:</strong> ${escapeHtml(profile.fatherName || 'N/A')} (${escapeHtml(profile.fatherOccupation || 'N/A')}) ${profile.fatherMobile ? '• Ph: ' + escapeHtml(profile.fatherMobile) : ''}</div>
+        <div><strong>Mother:</strong> ${escapeHtml(profile.motherName || 'N/A')} (${escapeHtml(profile.motherOccupation || 'Homemaker')}) ${profile.motherMobile ? '• Ph: ' + escapeHtml(profile.motherMobile) : ''}</div>
+        <div><strong>Siblings Summary:</strong> ${escapeHtml(profile.siblings || 'N/A')}</div>
+        ${profile.brothersList && profile.brothersList.length ? `
+          <div style="margin-top: 0.35rem; padding-left: 0.75rem; border-left: 2px solid var(--border);">
+            <strong>Brothers:</strong> ${profile.brothersList.map(b => escapeHtml((b.name || 'Brother') + ' [' + b.maritalStatus + (b.maritalStatus === 'Married' && b.wifeName ? ' w/ ' + b.wifeName : '') + ']')).join('; ')}
+          </div>
+        ` : ''}
+        ${profile.sistersList && profile.sistersList.length ? `
+          <div style="margin-top: 0.35rem; padding-left: 0.75rem; border-left: 2px solid var(--border);">
+            <strong>Sisters:</strong> ${profile.sistersList.map(s => escapeHtml((s.name || 'Sister') + ' [' + s.maritalStatus + (s.maritalStatus === 'Married' && s.husbandName ? ' m. ' + s.husbandName : '') + ']')).join('; ')}
+          </div>
+        ` : ''}
         <div><strong>Family Type:</strong> ${escapeHtml(profile.familyType || 'N/A')}</div>
       </div>
 

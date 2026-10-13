@@ -84,6 +84,7 @@ var ICON_PATHS = {
   logout: '<path d="M10 4H5v16h5M15 8l4 4-4 4M19 12H9"/>',
   gift: '<rect x="4" y="9" width="16" height="11" rx="1"/><path d="M12 9v11M3 9h18M12 9c-3 0-4.5-4-1.5-4.5S12 9 12 9zm0 0c3 0 4.5-4 1.5-4.5S12 9 12 9z"/>',
   hourglass: '<path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9s8 4 8 9"/>',
+  refresh: '<path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
   verified: '<path d="M12 2l2.4 2 3.1-.3 1 3 2.6 1.8-1 3 1 3-2.6 1.8-1 3-3.1-.3L12 22l-2.4-2-3.1.3-1-3L2.9 15.5l1-3-1-3 2.6-1.8 1-3 3.1.3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>'
 };
 
@@ -310,6 +311,11 @@ var Router = (function () {
     if (State.status === 'blocked') return 'blocked';
     if (State.status === 'rejected') return 'rejected';
     if (State.status === 'approved' && State.approvalPending) return 'approved'; // show the congratulations once
+    if (State.status === 'none') {
+      if (!State.profile || !State.profile.aadhaarVerified) return 'aadhaar';
+      if (!State.profile.panchayatId && !State.profile.ancestralOriginId) return 'communitySelect';
+      return 'choice';
+    }
     return 'home'; // pending, approved and new members can browse; approval unlocks the actions
   }
 

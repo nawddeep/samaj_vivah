@@ -236,6 +236,11 @@
                 <input type="text" id="height" class="form-control" placeholder="e.g. 5'10&quot;">
               </div>
 
+              <div class="form-group" id="group-weightKg">
+                <label for="weightKg" class="form-label">Weight (kg)</label>
+                <input type="number" id="weightKg" class="form-control" placeholder="e.g. 68" min="30" max="200">
+              </div>
+
               <div class="form-group" id="group-maritalStatus">
                 <label for="maritalStatus" class="form-label">Marital Status</label>
                 <select id="maritalStatus" class="form-select">
@@ -243,6 +248,7 @@
                   <option value="Divorced">Divorced</option>
                   <option value="Widowed">Widowed</option>
                   <option value="Awaiting Divorce">Awaiting Divorce</option>
+                  <option value="Abandoned / Separated (परित्यक्ता)">Abandoned / Separated (परित्यक्ता)</option>
                 </select>
               </div>
 
@@ -250,6 +256,25 @@
                 <label for="city" class="form-label">City / Location <span class="required">*</span></label>
                 <input type="text" id="city" class="form-control" placeholder="e.g. Mumbai">
                 <div class="invalid-feedback">City is required.</div>
+              </div>
+
+              <div class="form-group" id="group-residentialAddress">
+                <label for="residentialAddress" class="form-label">Residential Address</label>
+                <input type="text" id="residentialAddress" class="form-control" placeholder="e.g. 14, Sindhi Colony, Raja Park">
+              </div>
+
+              <div class="form-group" id="group-houseSize">
+                <label for="houseSize" class="form-label">House / Flat Size (sq ft)</label>
+                <input type="text" id="houseSize" class="form-control" placeholder="e.g. 1800 sq.ft. (3 BHK)">
+              </div>
+
+              <div class="form-group" id="group-houseType">
+                <label for="houseType" class="form-label">Property Ownership</label>
+                <select id="houseType" class="form-select">
+                  <option value="">Select Property Status</option>
+                  <option value="Owned (खुद का)">Owned (खुद का)</option>
+                  <option value="Rented (किराए का)">Rented (किराए का)</option>
+                </select>
               </div>
             </div>
           </div>
@@ -283,16 +308,80 @@
             </div>
           </div>
 
+          <!-- Section: Sindhi Samaj & Community Roots Directory -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                Sindhi Samaj & Roots Directory
+              </h3>
+            </div>
+
+            <div class="grid grid-cols-2">
+              <div class="form-group" id="group-panchayatId">
+                <label for="panchayatId" class="form-label">Sindhi Panchayat / Samaj</label>
+                <select id="panchayatId" class="form-select">
+                  <option value="">Select Panchayat / Samaj</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="group-ancestralOriginId">
+                <label for="ancestralOriginId" class="form-label">Ancestral Origin in Sindh (Pakistan)</label>
+                <select id="ancestralOriginId" class="form-select">
+                  <option value="">Select Ancestral Origin</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="group-subCommunityId">
+                <label for="subCommunityId" class="form-label">Traditional Lineage / Subgroup</label>
+                <select id="subCommunityId" class="form-select">
+                  <option value="">Select Lineage / Subgroup</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="group-casteRestriction">
+                <label for="casteRestriction" class="form-label">Community Match Restriction</label>
+                <select id="casteRestriction" class="form-select">
+                  <option value="Sindhi Samaj Only">Sindhi Samaj Only (सिंधी समाज मात्र)</option>
+                  <option value="All Hindu Communities Acceptable">All Hindu Communities Acceptable (सर्व हिन्दू समाज मान्य)</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="group-aadhaarVerified">
+                <label for="aadhaarVerified" class="form-label">Aadhaar Demo Status</label>
+                <select id="aadhaarVerified" class="form-select">
+                  <option value="true">Demo Verified</option>
+                  <option value="false">Unverified / Skipped</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="group-aadhaarMaskedRef">
+                <label for="aadhaarMaskedRef" class="form-label">Aadhaar Demo Reference</label>
+                <input type="text" id="aadhaarMaskedRef" class="form-control" placeholder="e.g. XXXX-XXXX-9012">
+              </div>
+            </div>
+          </div>
+
           <!-- Section 3: Family Details -->
           <div class="card">
             <div class="card-header">
               <h3 class="card-title">
                 <svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                Family Details
+                Family Details & Ancestry
               </h3>
             </div>
 
             <div class="grid grid-cols-2">
+              <div class="form-group" id="group-dadaName">
+                <label for="dadaName" class="form-label">Grandfather's Name (दादा जी)</label>
+                <input type="text" id="dadaName" class="form-control" placeholder="Paternal Grandfather's full name">
+              </div>
+
+              <div class="form-group" id="group-dadiName">
+                <label for="dadiName" class="form-label">Grandmother's Name (दादी जी)</label>
+                <input type="text" id="dadiName" class="form-control" placeholder="Paternal Grandmother's full name">
+              </div>
+
               <div class="form-group" id="group-fatherName">
                 <label for="fatherName" class="form-label">Father's Name</label>
                 <input type="text" id="fatherName" class="form-control" placeholder="Father's full name">
@@ -303,9 +392,24 @@
                 <input type="text" id="fatherOccupation" class="form-control" placeholder="e.g. Retired Engineer">
               </div>
 
+              <div class="form-group" id="group-fatherIncome">
+                <label for="fatherIncome" class="form-label">Father's Approx. Annual Income</label>
+                <input type="text" id="fatherIncome" class="form-control" placeholder="e.g. 12 LPA">
+              </div>
+
+              <div class="form-group" id="group-fatherMobile">
+                <label for="fatherMobile" class="form-label">Father's Mobile Number</label>
+                <input type="tel" id="fatherMobile" class="form-control" placeholder="e.g. 9829011111" maxlength="10">
+              </div>
+
               <div class="form-group" id="group-motherName">
                 <label for="motherName" class="form-label">Mother's Name</label>
                 <input type="text" id="motherName" class="form-control" placeholder="Mother's full name">
+              </div>
+
+              <div class="form-group" id="group-motherMobile">
+                <label for="motherMobile" class="form-label">Mother's Mobile Number</label>
+                <input type="tel" id="motherMobile" class="form-control" placeholder="e.g. 9829022222" maxlength="10">
               </div>
 
               <div class="form-group" id="group-siblings">
@@ -425,6 +529,7 @@
   </div>
 
   <!-- JavaScript Modules -->
+  <script src="../user/js/directory.js"></script>
   <script src="js/store.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/validators.js"></script>

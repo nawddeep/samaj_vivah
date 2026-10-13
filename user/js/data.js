@@ -39,7 +39,10 @@ var OPTIONS = {
     { value: 'Brother', gender: 'male' }, { value: 'Sister', gender: 'female' }, { value: 'Relative', gender: '' },
     { value: 'Friend', gender: '' }
   ],
-  maritalStatus: ['Never Married', 'Divorced', 'Widowed', 'Awaiting Divorce', 'Annulled'],
+  maritalStatus: ['Never Married', 'Divorced', 'Widowed', 'Abandoned / Separated (परित्यक्ता)', 'Awaiting Divorce', 'Annulled'],
+  houseTypes: ['Owned', 'Rented'],
+  casteRestrictions: ['Sindhi Samaj Only', 'All Hindu Communities Acceptable'],
+  weekdays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
   religions: ['Hindu', 'Sikh'],
   languages: ['Sindhi', 'Hindi', 'Gujarati', 'Marathi', 'Punjabi', 'English'],
   countries: ['India', 'United States', 'United Kingdom', 'Canada', 'United Arab Emirates', 'Australia', 'Singapore'],
@@ -247,27 +250,90 @@ var PEOPLE = [
 
 var COMPAT = [94, 91, 88, 86, 84, 92, 82, 79, 77, 74, 90, 87, 83, 89, 81, 76, 85, 78, 73, 80];
 
+var DEMO_FATHERS = ['Ramesh', 'Ghanshyam', 'Suresh', 'Mahesh', 'Dinesh', 'Rajesh', 'Mukesh', 'Naresh'];
+var DEMO_MOTHERS = ['Sunita', 'Kavita', 'Anita', 'Meena', 'Savita', 'Rekha', 'Usha', 'Kamla'];
+var DEMO_PANCHAYAT_IDS = ['pnc_jaipur_central', 'pnc_ajmer', 'pnc_ulhasnagar', 'pnc_ahmedabad', 'pnc_indore', 'pnc_bhopal', 'pnc_delhi_rajdhani', 'pnc_pune'];
+var DEMO_ANCESTRAL_IDS = ['anc_jacobabad', 'anc_shikarpur', 'anc_hyderabad', 'anc_larkana', 'anc_sukkur', 'anc_rohri', 'anc_dadu', 'anc_nawabshah'];
+var DEMO_SUBCOMM_IDS = ['sub_amil', 'sub_bhaiband', 'sub_sahiti', 'sub_larai', 'sub_uttaradi', 'sub_radhaswami', 'sub_lohana'];
+
 function buildProfile(row, i) {
   var spec = row[16];
   spec.gender = row[1];
   var firstName = row[0].split(' ')[0];
+  var surname = row[0].split(' ')[1] || 'Sindhi';
   var hobbies = HOBBY_SETS[i % HOBBY_SETS.length];
   var female = row[1] === 'female';
   var state = stateOfCity(row[3]);
   var photos = makePhotoSet(spec, i);
+  var pId = DEMO_PANCHAYAT_IDS[i % DEMO_PANCHAYAT_IDS.length];
+  var aId = DEMO_ANCESTRAL_IDS[i % DEMO_ANCESTRAL_IDS.length];
+  var sId = DEMO_SUBCOMM_IDS[i % DEMO_SUBCOMM_IDS.length];
+
+  var brothersCount = i % 3;
+  var sistersCount = (i + 1) % 3;
+  var brothersList = [];
+  for (var b = 0; b < brothersCount; b++) {
+    brothersList.push({
+      name: (b === 0 ? 'Deepak ' : 'Sunil ') + surname,
+      maritalStatus: b % 2 === 0 ? 'Unmarried' : 'Married',
+      wifeName: b % 2 === 0 ? '' : 'Kavita ' + surname,
+      occupation: 'Private Service',
+      phone: '98200' + ('00000' + (i * 10 + b)).slice(-5)
+    });
+  }
+  var sistersList = [];
+  for (var s = 0; s < sistersCount; s++) {
+    sistersList.push({
+      name: (s === 0 ? 'Simran ' : 'Pooja ') + surname,
+      maritalStatus: 'Married',
+      husbandName: 'Kunal Advani',
+      inlawsCity: 'Mumbai',
+      motherInLawName: 'Meena Advani',
+      phone: '98201' + ('00000' + (i * 10 + s)).slice(-5)
+    });
+  }
+
   return {
     id: 'p' + (i + 1),
     profileCode: 'SV' + (100200 + i * 37),
     name: row[0], firstName: firstName, gender: row[1], age: row[2], heightIn: row[10], maritalStatus: row[11],
+    weightKg: female ? (50 + (i % 12)) : (65 + (i % 15)),
+    birthWeekday: OPTIONS.weekdays[i % 7],
+    birthAmPm: (i % 2 ? 'AM' : 'PM'),
     religion: row[12], community: 'Sindhi', motherTongue: row[14],
+    casteRestriction: (i % 2 === 0 ? 'Sindhi Samaj Only' : 'All Hindu Communities Acceptable'),
+    panchayatId: pId,
+    ancestralOriginId: aId,
+    subCommunityId: sId,
+    aadhaarVerified: true,
+    aadhaarVerifiedAt: new Date(Date.now() - 86400000 * (i + 1)).toISOString(),
+    aadhaarMaskedRef: 'XXXX-XXXX-' + (1000 + i * 47),
     country: 'India', state: state, city: row[3], residency: 'Citizen', livingWithFamily: i % 3 !== 0,
+    residentialAddress: (101 + i) + ', Sindhi Colony, ' + row[3],
+    houseSize: i % 2 === 0 ? '3 BHK / 1500 sq ft' : '2 BHK / 1100 sq ft',
+    houseType: i % 3 === 0 ? 'Rented' : 'Owned',
     education: row[4], college: row[5], fieldOfStudy: OPTIONS.fields[i % OPTIONS.fields.length],
     employment: row[7], profession: row[6], company: row[8], income: row[9],
     diet: row[15], drinking: i % 4 === 0 ? 'Occasionally' : 'No', smoking: 'No', hobbies: hobbies,
     birthTime: (5 + (i % 12)) + ':' + (i % 2 ? '30' : '10') + (i % 2 ? ' AM' : ' PM'),
     birthPlace: row[3], manglik: OPTIONS.manglik[i % 3], rashi: OPTIONS.rashi[i % 12], nakshatra: OPTIONS.nakshatra[(i * 2) % 27],
-    fatherOcc: OPTIONS.fatherOcc[i % 4], motherOcc: OPTIONS.motherOcc[i % 3],
-    brothers: i % 3, sisters: (i + 1) % 3, familyType: i % 2 ? 'Nuclear' : 'Joint', familyValues: OPTIONS.familyValues[i % 2],
+    fatherName: DEMO_FATHERS[i % DEMO_FATHERS.length] + ' ' + surname,
+    fatherOcc: OPTIONS.fatherOcc[i % 4],
+    fatherMobile: '98290' + ('00000' + (i + 10)).slice(-5),
+    fatherIncome: OPTIONS.familyIncomes[i % OPTIONS.familyIncomes.length],
+    motherName: DEMO_MOTHERS[i % DEMO_MOTHERS.length] + ' ' + surname,
+    motherOcc: OPTIONS.motherOcc[i % 3],
+    motherMobile: '98290' + ('00000' + (i + 30)).slice(-5),
+    dadaName: 'Late Kishinchand ' + surname,
+    dadiName: 'Late Radhadevi ' + surname,
+    brothers: brothersCount,
+    brothersList: brothersList,
+    sisters: sistersCount,
+    sistersList: sistersList,
+    previousMarriageDuration: '',
+    childrenCount: 0,
+    childrenLivingWith: '',
+    familyType: i % 2 ? 'Nuclear' : 'Joint', familyValues: OPTIONS.familyValues[i % 2],
     nativePlace: i % 2 ? row[3] : 'Jaipur',
     about: 'I am a ' + row[6].toLowerCase() + ' living in ' + row[3] + '. I value family, honesty and a simple life. In my free time I enjoy ' +
       hobbies[0].toLowerCase() + ' and ' + hobbies[1].toLowerCase() + '. I am looking for a kind and understanding partner to build a happy home together.',
@@ -299,13 +365,26 @@ function blankPrefs() {
 function blankProfile() {
   return {
     profileFor: '', gender: '', firstName: '', lastName: '', dobDay: '', dobMonth: '', dobYear: '', maritalStatus: '', heightIn: 68,
+    weightKg: '', birthWeekday: '', birthAmPm: 'AM',
     religion: '', community: 'Sindhi', motherTongue: '',
+    panchayatIds: [], panchayatId: '', panchayatCustom: '',
+    ancestralOriginIds: [], ancestralOriginId: '',
+    subCommunityIds: [], subCommunityId: '',
+    aadhaarVerified: false, aadhaarVerifiedAt: '', aadhaarMaskedRef: '',
+    aadhaarStatus: 'UNVERIFIED', aadhaarMethod: '', aadhaarConsentGiven: false, aadhaarConsentTimestamp: '',
+    casteRestriction: 'Sindhi Samaj Only',
     country: 'India', state: '', city: '', residency: '', livingWithFamily: '',
+    residentialAddress: '', houseSize: '', houseType: 'Owned',
     education: '', college: '', fieldOfStudy: '',
     employment: '', profession: '', company: '', income: '',
     diet: '', drinking: '', smoking: '', hobbies: [],
     birthTime: '', birthPlace: '', manglik: '', rashi: '', nakshatra: '', kundali: '',
-    fatherOcc: '', motherOcc: '', brothers: 0, sisters: 0, familyType: '', familyValues: '', familyIncome: '', nativePlace: '',
+    fatherName: '', fatherOcc: '', fatherMobile: '', fatherIncome: '',
+    motherName: '', motherOcc: '', motherMobile: '',
+    dadaName: '', dadiName: '',
+    brothers: 0, brothersList: [], sisters: 0, sistersList: [],
+    previousMarriageDuration: '', childrenCount: 0, childrenLivingWith: '',
+    familyType: '', familyValues: '', familyIncome: '', nativePlace: '',
     about: '', prefs: blankPrefs(), photos: [], photoPrivacy: 'approved', biodataFile: '', idType: '', idFile: ''
   };
 }
@@ -316,13 +395,27 @@ function sampleProfile() {
   Object.assign(p, {
     profileFor: 'Myself', gender: 'male', firstName: 'Rahul', lastName: 'Lalwani', dobDay: '15', dobMonth: 'March', dobYear: '1998',
     maritalStatus: 'Never Married', heightIn: 69,
+    weightKg: 72, birthWeekday: 'Sunday', birthAmPm: 'AM',
     religion: 'Hindu', community: 'Sindhi', motherTongue: 'Sindhi',
+    panchayatIds: ['pan_central_jpr', 'pan_jacobabad_jpr'], panchayatId: 'pan_central_jpr',
+    ancestralOriginIds: ['anc_jacobabad'], ancestralOriginId: 'anc_jacobabad',
+    subCommunityIds: ['sub_amil'], subCommunityId: 'sub_amil',
+    aadhaarVerified: true, aadhaarVerifiedAt: '2026-03-15T10:30:00.000Z', aadhaarMaskedRef: 'XXXX-XXXX-9012',
+    aadhaarStatus: 'VERIFIED_DIGILOCKER', aadhaarMethod: 'digilocker', aadhaarConsentGiven: true, aadhaarConsentTimestamp: '2026-03-15T10:29:40.000Z',
+    casteRestriction: 'Sindhi Samaj Only',
     country: 'India', state: 'Maharashtra', city: 'Pune', residency: 'Citizen', livingWithFamily: 'Yes',
+    residentialAddress: 'Flat 402, Royal Palms, Koregaon Park, Pune',
+    houseSize: '3 BHK / 1650 sq ft', houseType: 'Owned',
     education: 'B.Tech', college: 'COEP Pune', fieldOfStudy: 'Computer Science',
     employment: 'Private', profession: 'Software Engineer', company: 'Infrabyte Technologies', income: '12-18 LPA',
     diet: 'Vegetarian', drinking: 'No', smoking: 'No', hobbies: ['Cricket', 'Travelling', 'Music'],
     birthTime: '6:30 AM', birthPlace: 'Jaipur', manglik: 'No', rashi: 'Mithun (Gemini)', nakshatra: 'Ardra', kundali: 'kundali_rahul.pdf',
-    fatherOcc: 'Business', motherOcc: 'Homemaker', brothers: 0, sisters: 1, familyType: 'Nuclear', familyValues: 'Moderate',
+    fatherName: 'Ghanshyam Lalwani', fatherOcc: 'Business', fatherMobile: '9829012345', fatherIncome: '18-25 LPA',
+    motherName: 'Kavita Lalwani', motherOcc: 'Homemaker', motherMobile: '9829012346',
+    dadaName: 'Late Kishinchand Lalwani', dadiName: 'Late Radhadevi Lalwani',
+    brothers: 0, brothersList: [],
+    sisters: 1, sistersList: [{ name: 'Simran Lalwani', maritalStatus: 'Married', husbandName: 'Kunal Advani', inlawsCity: 'Mumbai', motherInLawName: 'Meena Advani', phone: '9820011223' }],
+    familyType: 'Nuclear', familyValues: 'Moderate',
     familyIncome: '10-20 LPA', nativePlace: 'Jaipur',
     about: 'I am a software engineer based in Pune. I value family, honesty and a simple life. I enjoy cricket, travelling and music. I am looking for a kind, educated and understanding partner to build a happy home together.',
     photos: [set[0], set[1], set[2]], photoPrivacy: 'approved', biodataFile: 'My_Biodata.pdf', idType: 'Aadhaar', idFile: 'aadhaar_front.jpg'

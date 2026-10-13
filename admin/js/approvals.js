@@ -268,6 +268,33 @@ function openUserDetailsModal(userId) {
           <span style="color: var(--text-soft); font-size: 0.8rem; display: block;">Registration Date</span>
           <strong style="color: var(--text);">${formatDate(user.createdAt)}</strong>
         </div>
+        <div>
+          <span style="color: var(--text-soft); font-size: 0.8rem; display: block;">Aadhaar Verification Status</span>
+          <span class="badge ${user.profileData && user.profileData.aadhaarVerified ? 'badge-published' : 'badge-draft'}">
+            ${(() => {
+              if (!user.profileData || !user.profileData.aadhaarVerified) return 'Pending / Skipped';
+              if (user.profileData.aadhaarMethod === 'digilocker') return '✓ DigiLocker Verified';
+              if (user.profileData.aadhaarMethod === 'offline_xml') return '✓ Offline e-KYC Verified';
+              if (user.profileData.aadhaarMethod === 'manual_review') return '⏳ Manual ID (Review)';
+              return '✓ Verified (' + (user.profileData.aadhaarMethod || 'e-KYC') + ')';
+            })()}
+          </span>
+        </div>
+        <div>
+          <span style="color: var(--text-soft); font-size: 0.8rem; display: block;">Community / Panchayat(s)</span>
+          <strong style="color: var(--text);">
+            ${(() => {
+              if (!user.profileData) return 'Sindhi Samaj';
+              const pData = user.profileData;
+              const pIds = Array.isArray(pData.panchayatIds) && pData.panchayatIds.length ? pData.panchayatIds : (pData.panchayatId ? [pData.panchayatId] : []);
+              const pNames = pIds.map(id => {
+                const o = typeof getPanchayatById === 'function' ? getPanchayatById(id) : null;
+                return o ? o.name : id;
+              }).join(', ');
+              return pNames || (pData.panchayatId || 'Sindhi Samaj');
+            })()}
+          </strong>
+        </div>
       </div>
 
       ${user.rejectReason ? `

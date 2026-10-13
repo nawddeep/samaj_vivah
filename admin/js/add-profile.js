@@ -8,11 +8,50 @@ let profilePhotos = []; // Base64 data URIs
 let profileBiodata = null; // { name, data }
 
 document.addEventListener('DOMContentLoaded', () => {
+  populateDirectoryDropdowns();
   checkForEditMode();
   initFormEventListeners();
   initUploadHandlers();
   initUnsavedChangesWarning();
 });
+
+// Populate Sindhi Samaj & Roots directory dropdowns from SINDHI_DIRECTORY
+function populateDirectoryDropdowns() {
+  if (typeof SINDHI_DIRECTORY === 'undefined') return;
+
+  const pSelect = document.getElementById('panchayatId');
+  if (pSelect && SINDHI_DIRECTORY.panchayats) {
+    pSelect.innerHTML = '<option value="">Select Panchayat / Samaj</option>';
+    SINDHI_DIRECTORY.panchayats.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `${p.name} (${p.city}, ${p.state})`;
+      pSelect.appendChild(opt);
+    });
+  }
+
+  const aSelect = document.getElementById('ancestralOriginId');
+  if (aSelect && SINDHI_DIRECTORY.ancestralOrigins) {
+    aSelect.innerHTML = '<option value="">Select Ancestral Origin in Sindh</option>';
+    SINDHI_DIRECTORY.ancestralOrigins.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a.id;
+      opt.textContent = `${a.name} (${a.nameHi || ''}) - ${a.regionInSindh || ''}`;
+      aSelect.appendChild(opt);
+    });
+  }
+
+  const sSelect = document.getElementById('subCommunityId');
+  if (sSelect && SINDHI_DIRECTORY.subCommunities) {
+    sSelect.innerHTML = '<option value="">Select Traditional Lineage / Subgroup</option>';
+    SINDHI_DIRECTORY.subCommunities.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = `${s.name} (${s.nameHi || ''})`;
+      sSelect.appendChild(opt);
+    });
+  }
+}
 
 // Check if URL has ?id= parameter
 function checkForEditMode() {
@@ -44,14 +83,31 @@ function prefillForm(p) {
   document.getElementById('gender').value = p.gender || '';
   document.getElementById('age').value = p.age || '';
   document.getElementById('height').value = p.height || '';
+  if (document.getElementById('weightKg')) document.getElementById('weightKg').value = p.weightKg || '';
   document.getElementById('maritalStatus').value = p.maritalStatus || 'Never Married';
   document.getElementById('city').value = p.city || '';
+  if (document.getElementById('residentialAddress')) document.getElementById('residentialAddress').value = p.residentialAddress || '';
+  if (document.getElementById('houseSize')) document.getElementById('houseSize').value = p.houseSize || '';
+  if (document.getElementById('houseType')) document.getElementById('houseType').value = p.houseType || '';
   document.getElementById('education').value = p.education || '';
   document.getElementById('profession').value = p.profession || '';
   document.getElementById('income').value = p.income || '';
+
+  if (document.getElementById('panchayatId')) document.getElementById('panchayatId').value = p.panchayatId || '';
+  if (document.getElementById('ancestralOriginId')) document.getElementById('ancestralOriginId').value = p.ancestralOriginId || '';
+  if (document.getElementById('subCommunityId')) document.getElementById('subCommunityId').value = p.subCommunityId || '';
+  if (document.getElementById('casteRestriction')) document.getElementById('casteRestriction').value = p.casteRestriction || 'Sindhi Samaj Only';
+  if (document.getElementById('aadhaarVerified')) document.getElementById('aadhaarVerified').value = p.aadhaarVerified ? 'true' : 'false';
+  if (document.getElementById('aadhaarMaskedRef')) document.getElementById('aadhaarMaskedRef').value = p.aadhaarMaskedRef || '';
+
+  if (document.getElementById('dadaName')) document.getElementById('dadaName').value = p.dadaName || '';
+  if (document.getElementById('dadiName')) document.getElementById('dadiName').value = p.dadiName || '';
   document.getElementById('fatherName').value = p.fatherName || '';
   document.getElementById('fatherOccupation').value = p.fatherOccupation || '';
+  if (document.getElementById('fatherIncome')) document.getElementById('fatherIncome').value = p.fatherIncome || '';
+  if (document.getElementById('fatherMobile')) document.getElementById('fatherMobile').value = p.fatherMobile || '';
   document.getElementById('motherName').value = p.motherName || '';
+  if (document.getElementById('motherMobile')) document.getElementById('motherMobile').value = p.motherMobile || '';
   document.getElementById('siblings').value = p.siblings || '';
   document.getElementById('familyType').value = p.familyType || 'Nuclear';
   document.getElementById('religionDetails').value = p.religionDetails || '';
@@ -313,14 +369,29 @@ function submitForm(targetStatus) {
     gender: formData.gender,
     age: formData.age ? Number(formData.age) : null,
     height: Validators.trim(formData.height),
+    weightKg: document.getElementById('weightKg')?.value ? Number(document.getElementById('weightKg').value) : null,
     maritalStatus: formData.maritalStatus,
     city: Validators.trim(formData.city),
+    residentialAddress: Validators.trim(document.getElementById('residentialAddress')?.value || ''),
+    houseSize: Validators.trim(document.getElementById('houseSize')?.value || ''),
+    houseType: document.getElementById('houseType')?.value || '',
     education: Validators.trim(formData.education),
     profession: Validators.trim(formData.profession),
     income: Validators.trim(formData.income),
+    panchayatId: document.getElementById('panchayatId')?.value || '',
+    ancestralOriginId: document.getElementById('ancestralOriginId')?.value || '',
+    subCommunityId: document.getElementById('subCommunityId')?.value || '',
+    casteRestriction: document.getElementById('casteRestriction')?.value || 'Sindhi Samaj Only',
+    aadhaarVerified: document.getElementById('aadhaarVerified')?.value === 'true',
+    aadhaarMaskedRef: Validators.trim(document.getElementById('aadhaarMaskedRef')?.value || '') || (document.getElementById('aadhaarVerified')?.value === 'true' ? 'XXXX-XXXX-9012' : ''),
+    dadaName: Validators.trim(document.getElementById('dadaName')?.value || ''),
+    dadiName: Validators.trim(document.getElementById('dadiName')?.value || ''),
     fatherName: Validators.trim(formData.fatherName),
     fatherOccupation: Validators.trim(formData.fatherOccupation),
+    fatherIncome: Validators.trim(document.getElementById('fatherIncome')?.value || ''),
+    fatherMobile: Validators.trim(document.getElementById('fatherMobile')?.value || ''),
     motherName: Validators.trim(formData.motherName),
+    motherMobile: Validators.trim(document.getElementById('motherMobile')?.value || ''),
     siblings: Validators.trim(formData.siblings),
     familyType: formData.familyType,
     religionDetails: Validators.trim(formData.religionDetails),

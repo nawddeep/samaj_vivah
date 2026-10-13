@@ -43,9 +43,9 @@ var Bridge = (function () {
     stored.id = 'prf_d' + (i + 1);
     stored.height = heightText(rich.heightIn);
     stored.religionDetails = rich.religion + ' - Sindhi';
-    stored.fatherName = FATHERS[i % FATHERS.length] + ' ' + surname;
+    stored.fatherName = rich.fatherName || (FATHERS[i % FATHERS.length] + ' ' + surname);
     stored.fatherOccupation = rich.fatherOcc;
-    stored.motherName = MOTHERS[i % MOTHERS.length] + ' ' + surname;
+    stored.motherName = rich.motherName || (MOTHERS[i % MOTHERS.length] + ' ' + surname);
     stored.siblings = rich.brothers + ' brother(s), ' + rich.sisters + ' sister(s)';
     stored.expectations = 'Looking for a kind, educated and family-oriented partner from the Sindhi community.';
     stored.biodataFile = rich.hasBiodata ? { name: rich.firstName.toLowerCase() + '_biodata.pdf', data: FAKE_PDF } : null;
@@ -61,7 +61,7 @@ var Bridge = (function () {
   function seedDemoProfiles() {
     var profiles = getProfiles();
     var anchor = profiles.filter(function (p) { return p.id === 'prf_101'; })[0];
-    var mark = (anchor ? anchor.createdAt : 'none') + '|sindhi-v1'; // changes when the demo data changes, so old browsers refresh
+    var mark = (anchor ? anchor.createdAt : 'none') + '|sindhi-v2-forms'; // changes when seed schema updates
     if (safeGetItem(KEY.seedMark, '') === mark && profiles.some(function (p) { return p.demoSource; })) return;
     profiles = profiles.filter(function (p) { return !p.demoSource; });
     PROFILES.forEach(function (rich, i) { profiles.push(demoToStored(rich, i)); });
@@ -80,13 +80,48 @@ var Bridge = (function () {
     var defaults = {
       firstName: name.split(' ')[0],
       heightIn: hm ? Number(hm[1]) * 12 + Number(hm[2]) : 66,
+      weightKg: p.gender === 'female' ? 54 : 68,
+      birthWeekday: 'Sunday',
+      birthAmPm: 'AM',
       religion: /sikh/i.test(p.religionDetails || '') ? 'Sikh' : 'Hindu', community: 'Sindhi', motherTongue: 'Sindhi',
+      casteRestriction: 'Sindhi Samaj Only',
+      panchayatIds: Array.isArray(p.panchayatIds) ? p.panchayatIds.slice() : (p.panchayatId ? [p.panchayatId] : []),
+      panchayatId: p.panchayatId || (p.panchayatIds && p.panchayatIds[0]) || '',
+      panchayatCustom: '',
+      ancestralOriginIds: Array.isArray(p.ancestralOriginIds) ? p.ancestralOriginIds.slice() : (p.ancestralOriginId ? [p.ancestralOriginId] : []),
+      ancestralOriginId: p.ancestralOriginId || (p.ancestralOriginIds && p.ancestralOriginIds[0]) || '',
+      subCommunityIds: Array.isArray(p.subCommunityIds) ? p.subCommunityIds.slice() : (p.subCommunityId ? [p.subCommunityId] : []),
+      subCommunityId: p.subCommunityId || (p.subCommunityIds && p.subCommunityIds[0]) || '',
+      aadhaarVerified: p.aadhaarVerified !== undefined ? Boolean(p.aadhaarVerified) : true,
+      aadhaarVerifiedAt: p.aadhaarVerifiedAt || '',
+      aadhaarMaskedRef: p.aadhaarMaskedRef || 'XXXX-XXXX-9012',
+      aadhaarStatus: p.aadhaarStatus || (p.aadhaarVerified ? 'VERIFIED_DIGILOCKER' : 'UNVERIFIED'),
+      aadhaarMethod: p.aadhaarMethod || 'digilocker',
+      aadhaarConsentGiven: Boolean(p.aadhaarConsentGiven),
+      aadhaarConsentTimestamp: p.aadhaarConsentTimestamp || '',
       country: 'India', state: stateOfCity(p.city) || '', residency: 'Citizen', livingWithFamily: true,
+      residentialAddress: '',
+      houseSize: '3 BHK / 1400 sq ft',
+      houseType: 'Owned',
       college: '', fieldOfStudy: '', employment: 'Private', company: '',
       diet: 'Vegetarian', drinking: 'No', smoking: 'No', hobbies: [],
       birthTime: '', birthPlace: p.city || '', manglik: 'Don\'t know', rashi: '', nakshatra: '',
-      fatherOcc: p.fatherOccupation || 'Not shared', motherOcc: 'Homemaker',
-      brothers: brothers ? Number(brothers[1]) : 0, sisters: sisters ? Number(sisters[1]) : 0,
+      fatherName: '',
+      fatherOcc: p.fatherOccupation || 'Not shared',
+      fatherMobile: '',
+      fatherIncome: '',
+      motherName: '',
+      motherOcc: 'Homemaker',
+      motherMobile: '',
+      dadaName: '',
+      dadiName: '',
+      brothers: brothers ? Number(brothers[1]) : 0,
+      brothersList: [],
+      sisters: sisters ? Number(sisters[1]) : 0,
+      sistersList: [],
+      previousMarriageDuration: '',
+      childrenCount: 0,
+      childrenLivingWith: '',
       familyValues: 'Moderate', nativePlace: p.city || '',
       about: name.split(' ')[0] + ' is a ' + (p.profession || 'working professional').toLowerCase() + ' based in ' + (p.city || 'India') + '. ' + (p.expectations || ''),
       partnerPrefs: { ageMin: 22, ageMax: 40, heightMin: 48, heightMax: 84, maritalStatus: OPTIONS.maritalStatus.slice(), religion: 'Open to all', motherTongue: 'Open to all', education: ['Graduate or above'], profession: 'Open to all', income: 'Open to all', location: 'Open to all', diet: 'Open to all', manglik: 'Open to all' },
@@ -136,24 +171,61 @@ var Bridge = (function () {
   }
 
   function storedFromOnboarding(p, user, profileId) {
-    var prefs = p.prefs;
+    var prefs = p.prefs || blankPrefs();
     var age = calcAge(p.dobDay, p.dobMonth, p.dobYear) || 28;
     return {
       id: profileId, userId: user.id, userSubmitted: true,
       name: (p.firstName + ' ' + p.lastName).trim(), firstName: p.firstName, gender: p.gender, age: age,
       height: heightText(p.heightIn), heightIn: p.heightIn, maritalStatus: p.maritalStatus,
+      weightKg: p.weightKg || '',
+      birthWeekday: p.birthWeekday || '',
+      birthAmPm: p.birthAmPm || 'AM',
       education: p.education, profession: p.profession, income: p.income || 'Not shared', city: p.city,
       religionDetails: p.religion + ' - Sindhi',
-      fatherName: '', fatherOccupation: p.fatherOcc, motherName: '', siblings: p.brothers + ' brother(s), ' + p.sisters + ' sister(s)',
+      panchayatIds: Array.isArray(p.panchayatIds) ? p.panchayatIds.slice() : (p.panchayatId ? [p.panchayatId] : []),
+      panchayatId: p.panchayatId || (p.panchayatIds && p.panchayatIds[0]) || '',
+      panchayatCustom: p.panchayatCustom || '',
+      ancestralOriginIds: Array.isArray(p.ancestralOriginIds) ? p.ancestralOriginIds.slice() : (p.ancestralOriginId ? [p.ancestralOriginId] : []),
+      ancestralOriginId: p.ancestralOriginId || (p.ancestralOriginIds && p.ancestralOriginIds[0]) || '',
+      subCommunityIds: Array.isArray(p.subCommunityIds) ? p.subCommunityIds.slice() : (p.subCommunityId ? [p.subCommunityId] : []),
+      subCommunityId: p.subCommunityId || (p.subCommunityIds && p.subCommunityIds[0]) || '',
+      aadhaarVerified: Boolean(p.aadhaarVerified),
+      aadhaarVerifiedAt: p.aadhaarVerifiedAt || '',
+      aadhaarMaskedRef: p.aadhaarMaskedRef || '',
+      aadhaarStatus: p.aadhaarStatus || (p.aadhaarVerified ? 'VERIFIED_DIGILOCKER' : 'UNVERIFIED'),
+      aadhaarMethod: p.aadhaarMethod || 'digilocker',
+      aadhaarConsentGiven: Boolean(p.aadhaarConsentGiven),
+      aadhaarConsentTimestamp: p.aadhaarConsentTimestamp || '',
+      casteRestriction: p.casteRestriction || 'Sindhi Samaj Only',
+      residentialAddress: p.residentialAddress || '',
+      houseSize: p.houseSize || '',
+      houseType: p.houseType || 'Owned',
+      fatherName: p.fatherName || '',
+      fatherOccupation: p.fatherOcc || '',
+      fatherMobile: p.fatherMobile || '',
+      fatherIncome: p.fatherIncome || '',
+      motherName: p.motherName || '',
+      motherOccupation: p.motherOcc || '',
+      motherMobile: p.motherMobile || '',
+      dadaName: p.dadaName || '',
+      dadiName: p.dadiName || '',
+      brothers: p.brothers || 0,
+      brothersList: p.brothersList ? p.brothersList.slice() : [],
+      sisters: p.sisters || 0,
+      sistersList: p.sistersList ? p.sistersList.slice() : [],
+      siblings: (p.brothers || 0) + ' brother(s), ' + (p.sisters || 0) + ' sister(s)',
+      previousMarriageDuration: p.previousMarriageDuration || '',
+      childrenCount: p.childrenCount || 0,
+      childrenLivingWith: p.childrenLivingWith || '',
       familyType: p.familyType, expectations: p.about, contactNumber: user.phone,
-      photos: p.photos.slice(), biodataFile: p.biodataFile ? { name: p.biodataFile, data: FAKE_PDF } : null,
+      photos: (p.photos || []).slice(), biodataFile: p.biodataFile ? { name: p.biodataFile, data: FAKE_PDF } : null,
       status: 'draft',
       religion: p.religion, community: 'Sindhi', motherTongue: p.motherTongue,
       country: p.country, state: p.state, residency: p.residency, livingWithFamily: p.livingWithFamily === 'Yes',
       college: p.college, fieldOfStudy: p.fieldOfStudy, employment: p.employment, company: p.company,
-      diet: p.diet, drinking: p.drinking, smoking: p.smoking, hobbies: p.hobbies.slice(),
+      diet: p.diet, drinking: p.drinking, smoking: p.smoking, hobbies: (p.hobbies || []).slice(),
       birthTime: p.birthTime, birthPlace: p.birthPlace, manglik: p.manglik, rashi: p.rashi, nakshatra: p.nakshatra,
-      fatherOcc: p.fatherOcc, motherOcc: p.motherOcc, brothers: p.brothers, sisters: p.sisters,
+      fatherOcc: p.fatherOcc, motherOcc: p.motherOcc,
       familyValues: p.familyValues, nativePlace: p.nativePlace, about: p.about,
       partnerPrefs: {
         ageMin: prefs.ageMin, ageMax: prefs.ageMax, heightMin: prefs.heightMin, heightMax: prefs.heightMax,
@@ -374,6 +446,6 @@ var Bridge = (function () {
     restore: restore, login: login, logout: logout, sync: sync, markApprovalSeen: markApprovalSeen,
     submitProfile: submitProfile, demoSetStatus: demoSetStatus,
     loadShortlist: loadShortlist, saveShortlist: saveShortlist, logContactView: logContactView,
-    seedDemoProfiles: seedDemoProfiles
+    seedDemoProfiles: seedDemoProfiles, adapt: adapt, storedFromOnboarding: storedFromOnboarding
   };
 })();
