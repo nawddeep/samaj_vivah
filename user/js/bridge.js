@@ -104,6 +104,7 @@ var Bridge = (function () {
       houseSize: '3 BHK / 1400 sq ft',
       houseType: 'Owned',
       college: '', fieldOfStudy: '', employment: 'Private', company: '',
+      collegeYear: '', pgCollege: '', pgCollegeYear: '',
       diet: 'Vegetarian', drinking: 'No', smoking: 'No', hobbies: [],
       birthTime: '', birthPlace: p.city || '', manglik: 'Don\'t know', rashi: '', nakshatra: '',
       fatherName: '',
@@ -223,6 +224,10 @@ var Bridge = (function () {
       religion: p.religion, community: 'Sindhi', motherTongue: p.motherTongue,
       country: p.country, state: p.state, residency: p.residency, livingWithFamily: p.livingWithFamily === 'Yes',
       college: p.college, fieldOfStudy: p.fieldOfStudy, employment: p.employment, company: p.company,
+      // New optional fields. The PG college is published only when the qualification is a post-graduate one.
+      collegeYear: p.collegeYear || '',
+      pgCollege: isPostGradQualification(p.education) ? (p.pgCollege || '') : '',
+      pgCollegeYear: isPostGradQualification(p.education) ? (p.pgCollegeYear || '') : '',
       diet: p.diet, drinking: p.drinking, smoking: p.smoking, hobbies: (p.hobbies || []).slice(),
       birthTime: p.birthTime, birthPlace: p.birthPlace, manglik: p.manglik, rashi: p.rashi, nakshatra: p.nakshatra,
       fatherOcc: p.fatherOcc, motherOcc: p.motherOcc,

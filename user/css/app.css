@@ -110,6 +110,24 @@ html[lang="hi"] .q-title { font-size: 26px; }
 .phone-input-wrap { position: relative; flex: 1; min-width: 0; }
 .phone-input-wrap .input { padding-right: 52px; font-size: 18px; letter-spacing: 0.04em; }
 .phone-input-wrap .icon-btn { position: absolute; right: 2px; top: 3px; width: 48px; height: 48px; color: var(--text-soft); }
+
+/* ---------- Type-ahead (college) ----------
+   The list sits in the page flow under the field, not floating, so it never gets cut off at the bottom of the screen. */
+.ac-box { position: relative; }
+.ac-box .input { padding-right: 52px; }
+.ac-clear { position: absolute; right: 2px; top: 3px; width: 48px; height: 48px; color: var(--text-soft); }
+.ac-list { list-style: none; margin: 6px 0 0; padding: 4px; max-height: 360px; overflow-y: auto; background: #fff; border: 1.5px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); }
+.ac-option { display: flex; flex-direction: column; gap: 2px; min-height: 48px; padding: 9px 12px; border-radius: 10px; cursor: pointer; }
+.ac-option + .ac-option { border-top: 1px solid var(--border); }
+.ac-option:hover, .ac-option.active { background: var(--maroon-tint); }
+.ac-main { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.ac-name { flex: 1; min-width: 0; color: var(--text); overflow-wrap: anywhere; }
+.ac-name strong { color: var(--maroon); font-weight: 700; }
+.ac-badge { flex: 0 0 auto; margin-top: 1px; padding: 1px 8px; border: 1px solid var(--gold); border-radius: 999px; background: var(--gold-tint); color: #8A6A1E; font-size: 12px; font-weight: 600; line-height: 1.5; white-space: nowrap; }
+.ac-sub { color: var(--text-soft); font-size: 14px; }
+.ac-custom .ac-name { color: var(--maroon); font-weight: 600; }
+.college-block { margin-bottom: 4px; }
+.field-narrow { max-width: 220px; }
 .otp-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0 16px; }
 .otp-box { width: 62px; height: 68px; padding: 0; text-align: center; background: #fff; border: 1.5px solid var(--border); border-radius: 14px; font: 600 28px var(--font-body); color: var(--text); }
 .otp-box:focus { border-color: var(--maroon); outline: none; box-shadow: 0 0 0 3px rgba(123, 30, 43, 0.15); }

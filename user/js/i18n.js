@@ -110,7 +110,42 @@ I18N.en = {
   'settings.deleteMsg': 'Your profile, shortlist and messages will be removed. This cannot be undone.',
   'settings.loggedOut': 'You have been logged out',
   'settings.deleteFail': 'Could not delete the account. Please try again.',
-  'settings.deleted': 'Your account was deleted'
+  'settings.deleted': 'Your account was deleted',
+
+  'common.optional': 'Optional',
+
+  'ac.clear': 'Clear',
+  'ac.use': 'Use "{text}"',
+  'ac.count': '{n} suggestions. Use the up and down keys to choose.',
+  'ac.none': 'No match in the list. You can keep what you typed.',
+  'ac.chosen': '{text} selected',
+
+  'edu.title': 'Education',
+  'edu.helper': 'Tell us about the highest qualification.',
+  'edu.qualification': 'Highest qualification',
+  'edu.qualificationErr': 'Please select the highest qualification.',
+  'edu.college': 'Graduation college or university',
+  'edu.pgCollege': 'Post-graduation college or university',
+  'edu.collegePh': 'Start typing, e.g. IIT Bombay',
+  'edu.collegeHint': 'Optional. Choose from the list or type the name yourself.',
+  'edu.year': 'Year of passing',
+  'edu.field': 'Field of study',
+  'edu.pgCollegeShort': 'Post-graduation college',
+
+  'college.type.IIT': 'IIT',
+  'college.type.NIT': 'NIT',
+  'college.type.IIIT': 'IIIT',
+  'college.type.IIM': 'IIM',
+  'college.type.University': 'University',
+  'college.type.Deemed': 'Deemed',
+  'college.type.College': 'College',
+  'college.type.Medical': 'Medical',
+  'college.type.Law': 'Law',
+  'college.type.Design': 'Design',
+  'college.type.Institute': 'Institute',
+  'college.type.Foreign': 'Abroad',
+
+  'matches.search': 'Search by name, city or college'
 };
 
 /* ---------- Hindi (natural, respectful आप form; common English words like OTP stay) ---------- */
@@ -207,7 +242,42 @@ I18N.hi = {
   'settings.deleteMsg': 'आपकी प्रोफ़ाइल, शॉर्टलिस्ट और संदेश हटा दिए जाएँगे। इसे वापस नहीं लाया जा सकता।',
   'settings.loggedOut': 'आप लॉग आउट हो गए हैं',
   'settings.deleteFail': 'खाता हटाया नहीं जा सका। कृपया फिर से कोशिश करें।',
-  'settings.deleted': 'आपका खाता हटा दिया गया है'
+  'settings.deleted': 'आपका खाता हटा दिया गया है',
+
+  'common.optional': 'वैकल्पिक',
+
+  'ac.clear': 'मिटाएँ',
+  'ac.use': '"{text}" ही रखें',
+  'ac.count': '{n} सुझाव। चुनने के लिए ऊपर-नीचे वाली कुंजियाँ दबाएँ।',
+  'ac.none': 'सूची में नहीं मिला। आपने जो लिखा है, वही रखा जा सकता है।',
+  'ac.chosen': '{text} चुना गया',
+
+  'edu.title': 'शिक्षा',
+  'edu.helper': 'अपनी सबसे ऊँची शैक्षणिक योग्यता बताएँ।',
+  'edu.qualification': 'सर्वोच्च योग्यता',
+  'edu.qualificationErr': 'कृपया सर्वोच्च योग्यता चुनें।',
+  'edu.college': 'स्नातक का कॉलेज या विश्वविद्यालय',
+  'edu.pgCollege': 'स्नातकोत्तर का कॉलेज या विश्वविद्यालय',
+  'edu.collegePh': 'नाम लिखना शुरू करें, जैसे IIT Bombay',
+  'edu.collegeHint': 'वैकल्पिक। सूची से चुनें या नाम खुद लिखें।',
+  'edu.year': 'उत्तीर्ण होने का वर्ष',
+  'edu.field': 'अध्ययन का विषय',
+  'edu.pgCollegeShort': 'स्नातकोत्तर कॉलेज',
+
+  'college.type.IIT': 'IIT',
+  'college.type.NIT': 'NIT',
+  'college.type.IIIT': 'IIIT',
+  'college.type.IIM': 'IIM',
+  'college.type.University': 'विश्वविद्यालय',
+  'college.type.Deemed': 'डीम्ड',
+  'college.type.College': 'कॉलेज',
+  'college.type.Medical': 'मेडिकल',
+  'college.type.Law': 'विधि',
+  'college.type.Design': 'डिज़ाइन',
+  'college.type.Institute': 'संस्थान',
+  'college.type.Foreign': 'विदेश',
+
+  'matches.search': 'नाम, शहर या कॉलेज से खोजें'
 };
 
 /* ---------- Month names for display (stored dates keep the English month names) ---------- */

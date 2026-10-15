@@ -36,6 +36,12 @@ function calcAge(day, monthName, year) {
   return hadBirthday ? age : age - 1;
 }
 
+// Highest qualifications that come after a first degree (M.*, MBA, MD, MS, LLM, PhD, CA, CS).
+// For these the Education step also asks for the post-graduation college.
+function isPostGradQualification(q) {
+  return /^(M\.|MBA$|MD$|MS$|LLM$|PhD$|CA$|CS$)/.test(q || '');
+}
+
 /* ---------- Option lists used by the questions and filters ---------- */
 
 var OPTIONS = {
@@ -381,6 +387,7 @@ function blankProfile() {
     country: 'India', state: '', city: '', residency: '', livingWithFamily: '',
     residentialAddress: '', houseSize: '', houseType: 'Owned',
     education: '', college: '', fieldOfStudy: '',
+    collegeYear: '', pgCollege: '', pgCollegeYear: '', // graduation year, and the post-graduation college asked only for PG degrees
     employment: '', profession: '', company: '', income: '',
     diet: '', drinking: '', smoking: '', hobbies: [],
     birthTime: '', birthPlace: '', manglik: '', rashi: '', nakshatra: '', kundali: '',

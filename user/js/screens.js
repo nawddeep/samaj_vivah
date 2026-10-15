@@ -711,16 +711,53 @@ registerStep('location', {
 });
 
 /* ---------- 13. Education ---------- */
+// Passing years, newest first. Only past and current years: this asks about a finished degree.
+var PASSING_YEARS = (function () {
+  var list = [];
+  for (var y = new Date().getFullYear(); y >= 1960; y--) list.push(String(y));
+  return list;
+})();
+
+// Built on first search, not at load, so opening the app stays fast.
+var COLLEGE_INDEX = null;
+
+// Up to 8 colleges for the type-ahead: name, "City, State" in grey and a small type badge.
+function collegeSuggestions(query) {
+  if (!COLLEGE_INDEX) COLLEGE_INDEX = acIndex(COLLEGES, function (c) { return c.n; }, function (c) { return c.a; });
+  return acSearch(COLLEGE_INDEX, query, 8).map(function (c) {
+    return { value: c.n, sub: [c.c, c.s].filter(Boolean).join(', '), badge: t('college.type.' + c.t) };
+  });
+}
+
+// "IIT Bombay (2019)". Empty when no college was given, so callers can fall back to "Not added".
+function collegeText(name, year) {
+  if (isBlank(name)) return '';
+  return name + (year ? ' (' + year + ')' : '');
+}
+
+// One college: the type-ahead name plus a small optional year of passing.
+function collegeBlock(p, key, yearKey, label) {
+  return h('div', { class: 'college-block' }, [
+    autocompleteField(p, key, label, collegeSuggestions, { placeholder: t('edu.collegePh'), hint: t('edu.collegeHint'), maxlength: 80 }),
+    h('div', { class: 'field-narrow' }, pickerField(p, yearKey, t('edu.year'), function () { return PASSING_YEARS; }, { hint: t('common.optional') }))
+  ]);
+}
+
 registerStep('education', {
-  title: 'Education',
-  helper: 'Tell us about the highest qualification.',
+  title: function () { return t('edu.title'); },
+  helper: function () { return t('edu.helper'); },
   render: function (content) {
     var p = State.profile;
-    content.appendChild(pickerField(p, 'education', 'Highest qualification', function () { return OPTIONS.qualifications; }));
-    content.appendChild(textInput(p, 'college', 'College or university', { maxlength: 60, placeholder: 'Name of the college', hint: 'Optional' }));
-    content.appendChild(pickerField(p, 'fieldOfStudy', 'Field of study', function () { return OPTIONS.fields; }, { hint: 'Optional' }));
+    // Post-graduation college appears only for M.*, MBA, CA, PhD and similar (isPostGradQualification in data.js).
+    var pg = collegeBlock(p, 'pgCollege', 'pgCollegeYear', t('edu.pgCollege'));
+    function paintPg() { pg.hidden = !isPostGradQualification(p.education); }
+    content.appendChild(pickerField(p, 'education', t('edu.qualification'), function () { return OPTIONS.qualifications; }, { onChange: paintPg }));
+    content.appendChild(collegeBlock(p, 'college', 'collegeYear', t('edu.college')));
+    content.appendChild(pg);
+    content.appendChild(pickerField(p, 'fieldOfStudy', t('edu.field'), function () { return OPTIONS.fields; }, { hint: t('common.optional') }));
+    paintPg();
   },
-  validate: function () { return State.profile.education ? [] : [['education', 'Please select the highest qualification.']]; }
+  validate: function () { return State.profile.education ? [] : [['education', t('edu.qualificationErr')]]; }
 });
 
 /* ---------- 14. Work ---------- */
@@ -2172,9 +2209,11 @@ function reviewSections() {
       ['Living with family', show(p.livingWithFamily)]
     ] },
     { title: 'Education & Career', step: 'education', rows: [
-      ['Qualification', show(p.education)], ['College', show(p.college)], ['Field of study', show(p.fieldOfStudy)],
+      ['Qualification', show(p.education)], ['College', show(collegeText(p.college, p.collegeYear))],
+      isPostGradQualification(p.education) ? [t('edu.pgCollegeShort'), show(collegeText(p.pgCollege, p.pgCollegeYear))] : null,
+      ['Field of study', show(p.fieldOfStudy)],
       ['Employment', show(p.employment)], ['Profession', show(p.profession)], ['Company', show(p.company)], ['Annual income', show(p.income)]
-    ] },
+    ].filter(Boolean) },
     { title: 'Family Tree & Siblings', step: 'family', rows: [
       ['Father', (p.fatherName ? p.fatherName + ' - ' : '') + show(p.fatherOcc) + (p.fatherIncome ? ' (' + p.fatherIncome + ')' : '')],
       ['Father Mobile', p.fatherMobile ? UI.maskPhone(p.fatherMobile) + ' (Private)' : 'Not shared'],
@@ -3043,7 +3082,7 @@ Router.register('matches', function () {
   var countLine = h('p', { class: 'muted result-count', 'aria-live': 'polite' });
   var filterBadge = h('span', { class: 'count-badge' });
 
-  var search = h('input', { class: 'input', type: 'search', placeholder: 'Search by name or city', 'aria-label': 'Search by name or city', autocomplete: 'off' });
+  var search = h('input', { class: 'input', type: 'search', placeholder: t('matches.search'), 'aria-label': t('matches.search'), autocomplete: 'off' });
   search.value = a.search;
   var filterBtn = h('button', { type: 'button', class: 'btn btn-outline btn-small filter-btn', 'aria-label': 'Open filters' }, [Icon('filter', 20), 'Filter', filterBadge]);
   var sort = h('select', { class: 'select sort-select', 'aria-label': 'Sort matches' }, SORT_OPTIONS.map(function (o) { return h('option', { value: o[0], text: 'Sort: ' + o[1] }); }));
@@ -3057,7 +3096,10 @@ Router.register('matches', function () {
 
   function filtered() {
     var q = a.search.trim().toLowerCase();
-    var list = visibleProfiles().filter(function (p) { return !q || p.name.toLowerCase().indexOf(q) !== -1 || p.city.toLowerCase().indexOf(q) !== -1; });
+    var list = visibleProfiles().filter(function (p) {
+      if (!q) return true;
+      return [p.name, p.city, p.college, p.pgCollege].some(function (text) { return String(text || '').toLowerCase().indexOf(q) !== -1; });
+    });
     return sortProfiles(applyFilters(list, a.filters), a.sort);
   }
 
@@ -3432,9 +3474,11 @@ function profileView(p, own) {
       ['Living with family', p.livingWithFamily ? 'Yes' : 'No']
     ].concat(trusted && p.residentialAddress ? [['Address', p.residentialAddress]] : []))],
     ['work', 'Education and work', infoCard('sec-work', 'Education and work', [
-      ['Qualification', p.education], ['College', p.college], ['Field of study', p.fieldOfStudy],
+      ['Qualification', p.education], ['College', collegeText(p.college, p.collegeYear)],
+      p.pgCollege ? [t('edu.pgCollegeShort'), collegeText(p.pgCollege, p.pgCollegeYear)] : null,
+      ['Field of study', p.fieldOfStudy],
       ['Employment', p.employment], ['Profession', p.profession], ['Company', p.company], ['Annual income', p.income]
-    ])],
+    ].filter(Boolean))],
     ['lifestyle', 'Lifestyle', h('section', { class: 'card info-card', id: 'sec-lifestyle' }, [
       h('h3', { text: 'Lifestyle' }),
       h('dl', { class: 'info-list' }, [['Diet', p.diet], ['Drinking', p.drinking], ['Smoking', p.smoking]].map(function (row) { return h('div', { class: 'info-row' }, [h('dt', { text: row[0] }), h('dd', { text: row[1] })]); })),
