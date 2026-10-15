@@ -6,6 +6,11 @@ var SUPPORT_NUMBER = '90000 99999';
 var DEMO_OTP = '1234';
 var REJECTION_REASON = 'Photo is not clear, please upload a clear face photo.';
 
+// Temporarily hidden parts of the app. The code and the saved fields stay; set a switch to true to bring it back.
+// communityRestriction: the "Sindhi Samaj Only / All Hindu Communities Acceptable" choice (casteRestriction is still saved with its default).
+// documentsStep: the "Biodata and documents" page before Review (biodataFile, idType, idFile stay in the data shape).
+var FEATURES = { communityRestriction: false, documentsStep: false };
+
 /* ---------- Small formatting helpers ---------- */
 
 function fmtHeight(totalInches) {

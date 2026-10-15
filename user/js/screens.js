@@ -11,12 +11,12 @@ function Screen(o) {
   if (o.back || o.progress || o.right) {
     header = h('div', { class: 'screen-header' });
     if (o.back) {
-      header.appendChild(h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Go back', onClick: function () { if (o.onBack) o.onBack(); else Router.back(); } }, Icon('back')));
+      header.appendChild(h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('common.back'), onClick: function () { if (o.onBack) o.onBack(); else Router.back(); } }, Icon('back')));
     }
     if (o.progress) {
       fill = h('div', { class: 'progress-fill' });
       fill.style.width = Math.round(o.progress.from * 100) + '%';
-      header.appendChild(h('div', { class: 'progress', role: 'progressbar', 'aria-label': 'Profile progress', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(Math.round(o.progress.to * 100)) }, fill));
+      header.appendChild(h('div', { class: 'progress', role: 'progressbar', 'aria-label': t('common.progress'), 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(Math.round(o.progress.to * 100)) }, fill));
     } else {
       header.appendChild(h('div', { class: 'spacer' }));
     }
@@ -119,7 +119,7 @@ function openPickList(title, options, selected) {
       function paint(query) {
         clearNode(list);
         var shown = options.filter(function (opt) { return !query || opt.toLowerCase().indexOf(query.toLowerCase()) !== -1; });
-        if (!shown.length) list.appendChild(h('p', { class: 'muted', text: 'No results found.' }));
+        if (!shown.length) list.appendChild(h('p', { class: 'muted', text: t('common.noResults') }));
         shown.forEach(function (opt) {
           var on = opt === selected;
           list.appendChild(h('button', {
@@ -130,7 +130,7 @@ function openPickList(title, options, selected) {
       }
       var kids = [];
       if (options.length > 8) {
-        var search = h('input', { class: 'input', type: 'search', placeholder: 'Search', 'aria-label': 'Search the list' });
+        var search = h('input', { class: 'input', type: 'search', placeholder: t('common.search'), 'aria-label': t('common.searchList') });
         search.addEventListener('input', function () { paint(search.value); });
         kids.push(h('div', { class: 'field' }, search));
       }
@@ -148,7 +148,7 @@ function pickerField(obj, key, label, getOptions, o) {
   var button = h('button', { type: 'button', class: 'picker-btn', id: id, 'aria-haspopup': 'dialog' });
   function paint() {
     clearNode(button);
-    button.appendChild(h('span', { class: obj[key] ? '' : 'placeholder', text: obj[key] || o.placeholder || 'Select' }));
+    button.appendChild(h('span', { class: obj[key] ? '' : 'placeholder', text: obj[key] || o.placeholder || t('common.select') }));
     button.appendChild(Icon('down'));
   }
   button.addEventListener('click', function () {
@@ -327,7 +327,9 @@ function fileField(obj, key, label, files, o) {
    PART 1B: ONBOARDING WIZARD (one question per screen)
    ===================================================================== */
 
-var ONBOARDING = ['profileFor', 'gender', 'name', 'dob', 'marital', 'height', 'community', 'location', 'education', 'work', 'lifestyle', 'horoscope', 'family', 'about', 'partner', 'photos', 'documents', 'review'];
+var ONBOARDING = ['profileFor', 'gender', 'name', 'dob', 'marital', 'height', 'community', 'location', 'education', 'work', 'lifestyle', 'horoscope', 'family', 'about', 'partner', 'photos', 'documents', 'review'].filter(function (step) {
+  return step !== 'documents' || FEATURES.documentsStep; // hidden for now, set FEATURES.documentsStep = true to restore
+});
 
 // While editing from Review, a few steps belong together and continue one after another.
 var EDIT_NEXT = { profileFor: 'gender', name: 'dob', dob: 'marital', marital: 'height' };
@@ -367,10 +369,10 @@ function registerStep(name, cfg) {
       goNext();
     }
 
-    var skip = cfg.optional ? h('button', { type: 'button', class: 'link-btn', text: 'Skip', onClick: goNext }) : null;
+    var skip = cfg.optional ? h('button', { type: 'button', class: 'link-btn', text: t('common.skip'), onClick: goNext }) : null;
     var screen = Screen({
       back: true, progress: { from: index / total, to: (index + 1) / total }, right: skip,
-      body: body, footer: bigButton(cfg.nextText || 'Next', proceed)
+      body: body, footer: bigButton(cfg.nextText || t('common.next'), proceed)
     });
     clearErrorsOnEdit(content);
     content.addEventListener('keydown', function (event) {
@@ -618,7 +620,8 @@ registerStep('height', {
 /* ---------- 11. Community details ---------- */
 registerStep('community', {
   title: 'Community & Ancestral Identity',
-  helper: 'Your community details and preference restrictions (Page 2 Biodata).',
+  // The restriction question is hidden for now, so the helper no longer mentions it (FEATURES.communityRestriction).
+  helper: function () { return FEATURES.communityRestriction ? 'Your community details and preference restrictions (Page 2 Biodata).' : 'Your community and ancestral details.'; },
   render: function (content) {
     var p = State.profile;
     p.community = 'Sindhi';
@@ -646,7 +649,10 @@ registerStep('community', {
 
     content.appendChild(pickerField(p, 'religion', 'Religion', function () { return OPTIONS.religions; }));
     content.appendChild(pickerField(p, 'motherTongue', 'Mother tongue', function () { return OPTIONS.languages; }));
-    content.appendChild(fieldWrap('Caste / Community Restriction Preference', segmented(p, 'casteRestriction', OPTIONS.casteRestrictions, 'Caste restriction'), 'casteRestriction', 'Page 2 Biodata requirement: Restriction for marriage matches'));
+    // Hidden for now, set FEATURES.communityRestriction = true to restore. casteRestriction keeps its saved default for the admin panel.
+    if (FEATURES.communityRestriction) {
+      content.appendChild(fieldWrap('Caste / Community Restriction Preference', segmented(p, 'casteRestriction', OPTIONS.casteRestrictions, 'Caste restriction'), 'casteRestriction', 'Page 2 Biodata requirement: Restriction for marriage matches'));
+    }
   },
   validate: function () {
     var p = State.profile;
@@ -1116,6 +1122,9 @@ registerStep('photos', {
 });
 
 /* ---------- 21. Biodata and documents (optional) ---------- */
+// Hidden for now (FEATURES.documentsStep). The step stays registered so it can come back; until then an old
+// #/documents link or history entry opens Review instead of a step that is not in the flow.
+if (!FEATURES.documentsStep) Router.redirect('documents', 'review');
 registerStep('documents', {
   title: 'Biodata and documents',
   helper: 'Optional. You can add these later.',
@@ -1141,30 +1150,82 @@ function logoMark() {
   return mark;
 }
 
+/* ---------- Language pieces: the brand heading, the small switch pill and the two language cards ---------- */
+
+// "Samaj Vivah" in English; in Hindi the heading is "समाज विवाह" with the Latin name kept underneath.
+function brandHeading(className) {
+  var nodes = [h('h1', { class: className || '', text: t('app.name') })];
+  if (I18N.get() !== 'en') nodes.push(h('p', { class: 'brand-latin', lang: 'en', text: APP_NAME }));
+  return nodes;
+}
+
+// Top-corner pill: shows "हिन्दी" while English is on and "EN" while Hindi is on. One tap switches in place.
+function langSwitch() {
+  var next = I18N.get() === 'en' ? 'hi' : 'en';
+  return h('button', {
+    type: 'button', class: 'lang-pill', 'aria-label': t('lang.switchTo'),
+    onClick: function () { I18N.set(next); }
+  }, [Icon('globe', 18), h('span', { lang: next, text: t('lang.pill') })]);
+}
+
+// Two big radio cards (हिन्दी / English). Used by the first-launch chooser and by Settings.
+function languageCards(local, onChange) {
+  return optionCards(local, 'lang', I18N.LANGS.map(function (l) {
+    return { value: l.code, label: l.label, sub: l.sub };
+  }), { onChange: onChange });
+}
+
 /* ---------- 1. Splash ---------- */
 Router.register('splash', function () {
   var timer = null;
-  var el = h('section', { class: 'splash' }, [
-    logoMark(), h('h1', { text: APP_NAME }), h('p', { class: 'tagline', text: TAGLINE }), h('span', { class: 'demo-chip', text: 'Demo Version' })
-  ]);
+  var el = h('section', { class: 'splash' }, [logoMark()].concat(brandHeading(), [
+    h('p', { class: 'tagline', text: t('app.tagline') }), h('span', { class: 'demo-chip', text: t('app.demo') })
+  ]));
   return {
-    el: el, title: 'Welcome',
+    el: el, title: t('splash.title'),
     mounted: function () {
       var saved = Bridge.restore(); // a returning member skips the welcome slides
-      timer = setTimeout(function () { Router.replace(saved ? Router.gateName() : 'welcome'); }, 1500);
+      // First launch (no saved language) asks for the language once; otherwise the flow is unchanged.
+      var next = !I18N.saved() ? 'language' : saved ? Router.gateName() : 'welcome';
+      timer = setTimeout(function () { Router.replace(next); }, 1500);
     },
     leave: function () { clearTimeout(timer); }
   };
 });
 
+/* ---------- 1b. Language chooser (first launch only). Public: registered without auth so the guard allows it. ---------- */
+Router.register('language', function () {
+  var local = { lang: I18N.saved() || 'en' }; // default selection: English
+  var cards = languageCards(local);
+  var screen = Screen({
+    bodyClass: 'lang-body',
+    body: [
+      logoMark(),
+      // Both languages on purpose: the person has not chosen yet.
+      h('h1', { class: 'q-title center', lang: 'hi', text: 'अपनी भाषा चुनें' }),
+      h('p', { class: 'lang-sub center', lang: 'en', text: 'Choose your language' }),
+      cards,
+      h('p', { class: 'muted center lang-note' }, [
+        h('span', { lang: 'hi', text: 'आप इसे बाद में सेटिंग्स में बदल सकते हैं' }), h('br'),
+        h('span', { lang: 'en', text: 'You can change this later in Settings' })
+      ])
+    ],
+    footer: h('button', { type: 'button', class: 'btn btn-block btn-primary', onClick: function () {
+      I18N.set(local.lang);
+      Router.replace(State.loggedIn ? Router.gateName() : 'welcome'); // a restored login goes straight to its screen
+    } }, [h('span', { lang: 'en', text: 'Continue' }), h('span', { 'aria-hidden': 'true', text: '/' }), h('span', { lang: 'hi', text: 'आगे बढ़ें' })])
+  });
+  return { el: screen.el, title: 'भाषा / Language' };
+});
+
 /* ---------- 2. Welcome slides ---------- */
 Router.register('welcome', function () {
   var slides = [
-    { icon: 'verified', a: 'users', b: 'heart', title: 'Find verified matches in the Sindhi community', text: 'Every profile is checked by our team before you see it.' },
-    { icon: 'shield', a: 'lock', b: 'eye', title: 'Your privacy is protected', text: 'You choose who can see your photos and details.' },
-    { icon: 'phone', a: 'check', b: 'lock', title: 'Contact only after approval', text: 'Phone numbers are shown only to approved members.' }
+    { icon: 'verified', a: 'users', b: 'heart', title: t('welcome.s1.title'), text: t('welcome.s1.text') },
+    { icon: 'shield', a: 'lock', b: 'eye', title: t('welcome.s2.title'), text: t('welcome.s2.text') },
+    { icon: 'phone', a: 'check', b: 'lock', title: t('welcome.s3.title'), text: t('welcome.s3.text') }
   ];
-  var track = h('div', { class: 'intro-track', role: 'group', 'aria-label': 'Introduction', tabindex: '0' });
+  var track = h('div', { class: 'intro-track', role: 'group', 'aria-label': t('welcome.intro'), tabindex: '0' });
   var dots = h('div', { class: 'intro-dots', 'aria-hidden': 'true' });
   slides.forEach(function (s, i) {
     var art = h('div', { class: 'intro-art' }, [
@@ -1177,26 +1238,36 @@ Router.register('welcome', function () {
     var index = Math.round(track.scrollLeft / Math.max(track.clientWidth, 1));
     Array.prototype.forEach.call(dots.children, function (dot, i) { dot.classList.toggle('on', i === index); });
   });
-  var screen = Screen({ body: [], footer: bigButton('Get started', function () { State.cameFromWelcome = true; Router.go('phone'); }) });
+  var screen = Screen({ right: langSwitch(), body: [], footer: bigButton(t('welcome.start'), function () { State.cameFromWelcome = true; Router.go('phone'); }) });
   screen.el.insertBefore(track, screen.el.querySelector('.screen-body'));
   screen.el.insertBefore(dots, screen.el.querySelector('.screen-body'));
   screen.el.removeChild(screen.el.querySelector('.screen-body'));
-  return { el: screen.el, title: 'Welcome' };
+  // A language switch repaints this screen; keep the slide the person was reading.
+  var slideAt = State.welcomeSlide || 0;
+  track.addEventListener('scroll', debounce(function () { State.welcomeSlide = Math.round(track.scrollLeft / Math.max(track.clientWidth, 1)); }, 120));
+  return {
+    el: screen.el, title: t('welcome.title'),
+    mounted: function () {
+      if (!slideAt) return;
+      track.scrollLeft = slideAt * track.clientWidth;
+      Array.prototype.forEach.call(dots.children, function (dot, i) { dot.classList.toggle('on', i === slideAt); });
+    }
+  };
 });
 
 /* ---------- 3. Mobile number ---------- */
 Router.register('phone', function () {
   var timer = null;
-  var input = h('input', { class: 'input', id: 'phone-input', type: 'tel', inputmode: 'numeric', placeholder: 'Mobile number', autocomplete: 'tel-national', 'aria-label': 'Mobile number' });
-  var clearBtn = h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Clear number' }, Icon('close'));
+  var input = h('input', { class: 'input', id: 'phone-input', type: 'tel', inputmode: 'numeric', placeholder: t('phone.placeholder'), autocomplete: 'tel-national', 'aria-label': t('phone.placeholder') });
+  var clearBtn = h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('phone.clear') }, Icon('close'));
   var flag = h('span', { class: 'icon' });
   flag.innerHTML = INDIA_FLAG;
   var row = h('div', { class: 'phone-row' }, [
-    h('div', { class: 'country-box', 'aria-label': 'Country code plus 91' }, [flag, h('span', { text: '+91' })]),
+    h('div', { class: 'country-box', 'aria-label': t('phone.country') }, [flag, h('span', { text: '+91' })]),
     h('div', { class: 'phone-input-wrap' }, [input, clearBtn])
   ]);
-  var wrap = fieldWrap('', row, 'phone', 'We’ll send you a 4 digit OTP.');
-  var button = bigButton('Send OTP', send);
+  var wrap = fieldWrap('', row, 'phone', t('phone.hint'));
+  var button = bigButton(t('phone.send'), send);
 
   input.value = State.phone;
   function paintClear() { clearBtn.hidden = !input.value; }
@@ -1213,18 +1284,18 @@ Router.register('phone', function () {
   clearErrorsOnEdit(wrap);
 
   function send() {
-    if (!/^\d{10}$/.test(input.value)) { showErrors(wrap, [['phone', 'Please enter a valid 10-digit mobile number.']]); return; }
-    setButtonBusy(button, 'Sending OTP...');
-    timer = setTimeout(function () { Router.go('otp'); resetButton(button, 'Send OTP'); }, 1000);
+    if (!/^\d{10}$/.test(input.value)) { showErrors(wrap, [['phone', t('phone.invalid')]]); return; }
+    setButtonBusy(button, t('phone.sending'));
+    timer = setTimeout(function () { Router.go('otp'); resetButton(button, t('phone.send')); }, 1000);
   }
 
   var screen = Screen({
-    back: State.cameFromWelcome,
-    body: [h('h1', { class: 'q-title', text: 'What’s your mobile number?' }), h('p', { class: 'q-helper', text: 'We will use it to log you in safely.' }), wrap],
+    back: State.cameFromWelcome, right: langSwitch(),
+    body: [h('h1', { class: 'q-title', text: t('phone.title') }), h('p', { class: 'q-helper', text: t('phone.helper') }), wrap],
     footer: button
   });
   paintClear();
-  return { el: screen.el, title: 'Mobile number', leave: function () { clearTimeout(timer); }, mounted: function () { input.focus({ preventScroll: true }); } };
+  return { el: screen.el, title: t('phone.screen'), leave: function () { clearTimeout(timer); }, mounted: function () { input.focus({ preventScroll: true }); } };
 });
 
 /* ---------- 4. OTP ---------- */
@@ -1234,13 +1305,13 @@ Router.register('otp', function () {
   var autoFill = [];
   var seconds = 30;
   var boxes = [0, 1, 2, 3].map(function (i) {
-    return h('input', { class: 'otp-box', type: 'text', inputmode: 'numeric', maxlength: '1', autocomplete: i === 0 ? 'one-time-code' : 'off', 'aria-label': 'Digit ' + (i + 1) + ' of 4' });
+    return h('input', { class: 'otp-box', type: 'text', inputmode: 'numeric', maxlength: '1', autocomplete: i === 0 ? 'one-time-code' : 'off', 'aria-label': t('otp.digit', { n: i + 1 }) });
   });
   var row = h('div', { class: 'otp-row' }, boxes);
   var wrap = fieldWrap('', row, 'otp');
   var timerLine = h('p', { class: 'muted center', 'aria-live': 'off' });
-  var resend = h('button', { type: 'button', class: 'link-btn', text: 'Resend OTP' });
-  var button = bigButton('Verify', verify);
+  var resend = h('button', { type: 'button', class: 'link-btn', text: t('otp.resend') });
+  var button = bigButton(t('otp.verify'), verify);
 
   function code() { return boxes.map(function (b) { return b.value; }).join(''); }
   boxes.forEach(function (box, i) {
@@ -1265,7 +1336,7 @@ Router.register('otp', function () {
   function paintTimer() {
     timerLine.hidden = seconds <= 0;
     resend.hidden = seconds > 0;
-    timerLine.textContent = 'Resend code in 0:' + (seconds < 10 ? '0' : '') + seconds;
+    timerLine.textContent = t('otp.resendIn', { time: '0:' + (seconds < 10 ? '0' : '') + seconds });
   }
   function startTimer() {
     clearInterval(ticker);
@@ -1273,14 +1344,14 @@ Router.register('otp', function () {
     paintTimer();
     ticker = setInterval(function () { seconds -= 1; paintTimer(); if (seconds <= 0) clearInterval(ticker); }, 1000);
   }
-  resend.addEventListener('click', function () { startTimer(); UI.toast('A new OTP has been sent.'); boxes[0].focus(); });
+  resend.addEventListener('click', function () { startTimer(); UI.toast(t('otp.resent')); boxes[0].focus(); });
 
   function verify() {
-    if (code().length < 4) { showErrors(wrap, [['otp', 'Please enter the 4 digit OTP.']]); return; }
-    setButtonBusy(button, 'Verifying...');
+    if (code().length < 4) { showErrors(wrap, [['otp', t('otp.invalid')]]); return; }
+    setButtonBusy(button, t('otp.verifying'));
     verifyTimer = setTimeout(function () {
       var user = Bridge.login(State.phone); // an existing number opens its account; a new one starts the profile
-      UI.toast('Mobile number verified');
+      UI.toast(t('otp.verified'));
       if (!user || user.status === 'none' || !user.profileId) {
         Router.replace('aadhaar');
       } else {
@@ -1289,24 +1360,24 @@ Router.register('otp', function () {
     }, 800);
   }
 
-  var phoneText = State.phone ? '+91 ' + fmtPhone(State.phone) : 'your number';
+  var phoneText = State.phone ? '+91 ' + fmtPhone(State.phone) : t('otp.yourNumber');
   var screen = Screen({
     back: true,
     body: [
-      h('h1', { class: 'q-title', text: 'Enter the 4 digit OTP' }),
-      h('p', { class: 'q-helper', text: 'We sent a code to ' + phoneText + '.' }),
-      wrap, timerLine, h('div', { class: 'otp-foot' }, [resend, h('button', { type: 'button', class: 'link-btn', text: 'Change number', onClick: function () { Router.back(); } })]),
-      h('p', { class: 'muted center', text: 'Demo OTP: ' + DEMO_OTP.split('').join(' ') })
+      h('h1', { class: 'q-title', text: t('otp.title') }),
+      h('p', { class: 'q-helper', text: t('otp.sentTo', { phone: phoneText }) }),
+      wrap, timerLine, h('div', { class: 'otp-foot' }, [resend, h('button', { type: 'button', class: 'link-btn', text: t('otp.change'), onClick: function () { Router.back(); } })]),
+      h('p', { class: 'muted center', text: t('otp.demo', { code: DEMO_OTP.split('').join(' ') }) })
     ],
     footer: button
   });
   return {
-    el: screen.el, title: 'Verify OTP',
+    el: screen.el, title: t('otp.screen'),
     mounted: function () {
       startTimer();
       // Pretend the SMS arrived and was read automatically: the hardcoded code fills in digit by digit.
       DEMO_OTP.split('').forEach(function (digit, i) {
-        autoFill.push(setTimeout(function () { boxes[i].value = digit; if (i < 3) boxes[i + 1].focus({ preventScroll: true }); else { boxes[3].blur(); UI.toast('OTP read from SMS', 'info'); } }, 900 + i * 220));
+        autoFill.push(setTimeout(function () { boxes[i].value = digit; if (i < 3) boxes[i + 1].focus({ preventScroll: true }); else { boxes[3].blur(); UI.toast(t('otp.autoRead'), 'info'); } }, 900 + i * 220));
       });
     },
     leave: function () { clearInterval(ticker); clearTimeout(verifyTimer); autoFill.forEach(clearTimeout); }
@@ -2079,10 +2150,10 @@ function reviewSections() {
       ['Panchayat(s) / Samaj', pNames],
       ['Ancestral Origin(s) in Sindh', aNames],
       ['Traditional Lineage(s)', sNames],
-      ['Community Preference', show(p.casteRestriction)],
+      FEATURES.communityRestriction ? ['Community Preference', show(p.casteRestriction)] : null, // hidden for now
       ['Religion', show(p.religion)],
       ['Mother tongue', show(p.motherTongue)]
-    ] },
+    ].filter(Boolean) },
     { title: 'Profile for', step: 'profileFor', rows: [['Created for', show(p.profileFor)], ['Gender', show(cap(p.gender))]] },
     { title: 'Personal details', step: 'name', rows: [
       ['Name', show((p.firstName + ' ' + p.lastName).trim())],
@@ -2131,8 +2202,9 @@ function reviewSections() {
       ['Income', pref('income')], ['Location', pref('location')], ['Diet', pref('diet')], ['Manglik', pref('manglik')]
     ] },
     { title: 'Photos', step: 'photos', photos: p.photos, rows: [['Photo privacy', show((OPTIONS.photoPrivacy.filter(function (o) { return o.value === p.photoPrivacy; })[0] || {}).label)]] },
-    { title: 'Documents', step: 'documents', rows: [['Biodata', show(p.biodataFile)], ['ID proof', p.idFile ? p.idType + ': ' + p.idFile : 'Not added']] }
-  ];
+    // Hidden for now with the documents step (FEATURES.documentsStep), so Review has no Edit link to a missing page.
+    FEATURES.documentsStep ? { title: 'Documents', step: 'documents', rows: [['Biodata', show(p.biodataFile)], ['ID proof', p.idFile ? p.idType + ': ' + p.idFile : 'Not added']] } : null
+  ].filter(Boolean);
 }
 
 Router.register('review', function () {
@@ -2184,7 +2256,7 @@ Router.register('review', function () {
     ? h('div', { class: 'info-note', style: 'margin:0 0 16px' }, [Icon('check'), h('span', { text: 'We filled in your profile from your biodata. Please check each section.' })])
     : null;
   var screen = Screen({
-    back: true, progress: { from: 17 / 18, to: 1 },
+    back: true, progress: { from: (ONBOARDING.length - 1) / ONBOARDING.length, to: 1 }, // follows the step list
     body: [h('h1', { class: 'q-title', text: 'Review your profile' }), h('p', { class: 'q-helper', text: 'Check everything. Tap Edit to change a section.' }), banner].concat(cards, [consentWrap]),
     footer: button
   });
@@ -2391,10 +2463,8 @@ var AccessUI = (function () {
     if (!wanted) return;
     clearNode(box);
     var pending = State.status === 'pending';
-    box.appendChild(h('span', { class: 'ab-text', text: pending
-      ? 'Your profile is under review. You can browse now. Messaging and contact unlock after approval.'
-      : 'You are browsing as a guest. Create your profile to send interests and message after approval.' }));
-    box.appendChild(h('button', { type: 'button', class: 'ab-link', text: pending ? 'View status' : 'Create profile', onClick: function () { Router.go(pending ? 'pending' : 'choice'); } }));
+    box.appendChild(h('span', { class: 'ab-text', text: pending ? t('banner.pending') : t('banner.guest') }));
+    box.appendChild(h('button', { type: 'button', class: 'ab-link', text: pending ? t('banner.viewStatus') : t('banner.createProfile'), onClick: function () { Router.go(pending ? 'pending' : 'choice'); } }));
   }
   // The moment the status changes (for example "Simulate approval"), the banner goes and every locked button opens up.
   Access.listeners.push(function () { render(); repaintBound(); });
@@ -2506,17 +2576,25 @@ function logout() {
 function completionItems() {
   var p = State.profile;
   var photos = p.photos.length;
-  return [
-    { label: 'Basic details', points: 20, earned: p.firstName && p.dobYear && p.maritalStatus ? 20 : 0, step: 'name', tip: 'Add your basic details' },
-    { label: 'Education and work', points: 15, earned: p.education && p.profession ? 15 : 0, step: 'education', tip: 'Add education and work' },
-    { label: 'Family details', points: 10, earned: p.fatherOcc ? 10 : 0, step: 'family', tip: 'Add family details' },
+  // Without the documents step (hidden for now) its 15 points move to basic, education and family (+5 each) so the total stays 100.
+  var docs = FEATURES.documentsStep;
+  var basic = docs ? 20 : 25;
+  var work = docs ? 15 : 20;
+  var family = docs ? 10 : 15;
+  var items = [
+    { label: 'Basic details', points: basic, earned: p.firstName && p.dobYear && p.maritalStatus ? basic : 0, step: 'name', tip: 'Add your basic details' },
+    { label: 'Education and work', points: work, earned: p.education && p.profession ? work : 0, step: 'education', tip: 'Add education and work' },
+    { label: 'Family details', points: family, earned: p.fatherOcc ? family : 0, step: 'family', tip: 'Add family details' },
     { label: 'Lifestyle', points: 5, earned: p.diet ? 5 : 0, step: 'lifestyle', tip: 'Add lifestyle details' },
     { label: 'About me', points: 10, earned: p.about.trim().length >= 30 ? 10 : 0, step: 'about', tip: 'Write a few lines about yourself' },
     { label: 'Horoscope', points: 10, earned: p.rashi || p.kundali ? 10 : 0, step: 'horoscope', tip: 'Add horoscope details' },
-    { label: 'Photos', points: 15, earned: photos >= 3 ? 15 : photos >= 1 ? 8 : 0, step: 'photos', tip: 'Add at least 3 photos' },
-    { label: 'Biodata', points: 5, earned: p.biodataFile ? 5 : 0, step: 'documents', tip: 'Upload your biodata' },
-    { label: 'ID proof', points: 10, earned: p.idFile ? 10 : 0, step: 'documents', tip: 'Upload an ID proof to get verified' }
+    { label: 'Photos', points: 15, earned: photos >= 3 ? 15 : photos >= 1 ? 8 : 0, step: 'photos', tip: 'Add at least 3 photos' }
   ];
+  if (docs) {
+    items.push({ label: 'Biodata', points: 5, earned: p.biodataFile ? 5 : 0, step: 'documents', tip: 'Upload your biodata' });
+    items.push({ label: 'ID proof', points: 10, earned: p.idFile ? 10 : 0, step: 'documents', tip: 'Upload an ID proof to get verified' });
+  }
+  return items;
 }
 
 function completionPercent() {
@@ -3339,14 +3417,14 @@ function profileView(p, own) {
       ['Panchayat(s) / Samaj', pNames],
       ['Ancestral Origin(s) in Sindh', aNames],
       ['Traditional Lineage(s)', sNames],
-      ['Community Preference', p.casteRestriction || 'Sindhi Samaj Only'],
+      FEATURES.communityRestriction ? ['Community Preference', p.casteRestriction || 'Sindhi Samaj Only'] : null, // hidden for now
       ['Aadhaar Status', aadhaarLabel],
       ['Religion', p.religion],
       ['Mother tongue', p.motherTongue],
       ['Manglik', p.manglik],
       ['Rashi', p.rashi],
       ['Nakshatra', p.nakshatra]
-    ])],
+    ].filter(Boolean))],
     ['housing', 'Housing & Residence', infoCard('sec-housing', 'Property & Residence', [
       ['City & State', p.city + ', ' + p.state],
       ['House / Flat Size', p.houseSize || 'Not shared'],
@@ -3384,15 +3462,14 @@ function profileView(p, own) {
         ]);
       }))
     ])],
-    ['biodata', 'Biodata', h('section', { class: 'card info-card', id: 'sec-biodata' }, [
+    // No biodata file: no section and no tab, rather than an empty "nothing uploaded" card.
+    p.hasBiodata ? ['biodata', 'Biodata', h('section', { class: 'card info-card', id: 'sec-biodata' }, [
       h('h3', { text: 'Biodata' }),
-      p.hasBiodata && !trusted
+      !trusted
         ? h('div', { class: 'info-note' }, [Icon('lock'), h('span', { text: 'The biodata file is available after your profile is approved.' })])
-        : p.hasBiodata
-        ? h('div', { class: 'file-chip' }, [Icon('file'), h('span', { class: 'name', text: p.firstName.toLowerCase() + '_biodata.pdf' }), h('button', { type: 'button', class: 'btn btn-outline btn-small', text: 'View', onClick: function () { openBiodata(p); } })])
-        : h('p', { class: 'muted', text: 'No biodata file has been uploaded.' })
-    ])]
-  ];
+        : h('div', { class: 'file-chip' }, [Icon('file'), h('span', { class: 'name', text: p.firstName.toLowerCase() + '_biodata.pdf' }), h('button', { type: 'button', class: 'btn btn-outline btn-small', text: 'View', onClick: function () { openBiodata(p); } })])
+    ])] : null
+  ].filter(Boolean);
 
   var tabs = h('div', { class: 'tabs-row', role: 'tablist', 'aria-label': 'Profile sections' }, sections.map(function (s, i) {
     var tab = h('button', { type: 'button', class: 'chip tab-chip' + (i === 0 ? ' on' : ''), role: 'tab', text: s[1] });
@@ -3689,7 +3766,7 @@ var EDIT_SECTIONS = [
   ['Horoscope', 'horoscope', 'Birth time, rashi, kundali'], ['Family details', 'family', 'Parents, siblings, family type'],
   ['About me', 'about', 'A few lines about yourself'], ['Photos', 'photos', 'Add, remove, choose the main photo'],
   ['Biodata and documents', 'documents', 'Biodata and ID proof']
-];
+].filter(function (s) { return s[1] !== 'documents' || FEATURES.documentsStep; }); // hidden for now with the documents step
 
 function accountPhoto() { return State.profile.photos[0] || GENDER_ART[State.profile.gender || 'male']; }
 
@@ -3827,7 +3904,10 @@ Router.register('verification', function () {
   var p = State.profile;
   var items = [
     { label: 'Phone verified', ok: true, note: '+91 ' + fmtPhone(State.phone) },
-    { label: 'ID verified', ok: Boolean(p.idFile) && State.status === 'approved', note: p.idFile ? p.idType + ': ' + p.idFile : 'Upload an ID proof to get verified', step: 'documents', cta: 'Upload ID' },
+    // ID upload lives on the documents step, hidden for now; until it is back, Aadhaar verification is the ID check.
+    FEATURES.documentsStep
+      ? { label: 'ID verified', ok: Boolean(p.idFile) && State.status === 'approved', note: p.idFile ? p.idType + ': ' + p.idFile : 'Upload an ID proof to get verified', step: 'documents', cta: 'Upload ID' }
+      : { label: 'ID verified', ok: Boolean(p.aadhaarVerified) && State.status === 'approved', note: p.aadhaarVerified ? 'Aadhaar verified' : 'Verify your Aadhaar to get verified', step: 'aadhaar', cta: 'Verify Aadhaar' },
     { label: 'Photo verified', ok: p.photos.length > 0 && State.status === 'approved', note: p.photos.length ? p.photos.length + ' photo(s) on your profile' : 'Add a clear photo of your face', step: 'photos', cta: 'Add photo' }
   ];
   var rows = items.map(function (item) {
@@ -3891,37 +3971,35 @@ Router.register('settings', function () {
   var a = appState();
   a.settings = a.settings || { matches: true, interests: true, messages: true, hidden: false };
   function toggleRow(label, key) {
-    return h('div', { class: 'switch-row' }, [h('span', { text: label }), switchButton(a.settings[key], label, function (on) { a.settings[key] = on; UI.toast(label + (on ? ' on' : ' off'), 'info'); })]);
+    return h('div', { class: 'switch-row' }, [h('span', { text: label }), switchButton(a.settings[key], label, function (on) { a.settings[key] = on; UI.toast(t(on ? 'common.on' : 'common.off', { label: label }), 'info'); })]);
   }
-  var language = h('select', { class: 'select', id: 'lang', 'aria-label': 'Language' }, [h('option', { value: 'en', text: 'English' }), h('option', { value: 'hi', text: 'Hindi' })]);
-  language.addEventListener('change', function () {
-    if (language.value === 'hi') { UI.toast('Hindi is not available in this demo. English stays on.', 'error'); language.value = 'en'; }
-  });
+  // Same two cards as the first-launch chooser. Picking one repaints this screen in the new language.
+  var language = languageCards({ lang: I18N.get() }, function (code) { I18N.set(code); });
   var hideRow = h('div', { class: 'switch-row' }, [
-    h('span', { class: 'menu-text' }, [h('span', { text: 'Hide my profile' }), h('span', { class: 'p-active', text: 'Others will not see it until you turn this off' })]),
-    switchButton(a.settings.hidden, 'Hide my profile temporarily', function (on) { a.settings.hidden = on; UI.toast(on ? 'Your profile is hidden for now' : 'Your profile is visible again', 'info'); })
+    h('span', { class: 'menu-text' }, [h('span', { text: t('settings.hide') }), h('span', { class: 'p-active', text: t('settings.hideSub') })]),
+    switchButton(a.settings.hidden, t('settings.hideAria'), function (on) { a.settings.hidden = on; UI.toast(on ? t('settings.hidden') : t('settings.visible'), 'info'); })
   ]);
   var screen = Screen({
     back: true,
     body: [
-      h('h1', { class: 'q-title tight', text: 'Settings' }),
-      h('h3', { class: 'section-label', text: 'Notifications' }), h('div', { class: 'card' }, [toggleRow('New matches', 'matches'), toggleRow('Interests', 'interests'), toggleRow('Messages', 'messages')]),
-      h('h3', { class: 'section-label', text: 'Language' }), fieldWrap('', language, null, 'Only English is available in this demo.', 'lang'),
-      h('h3', { class: 'section-label', text: 'Privacy' }), h('div', { class: 'card' }, hideRow),
-      h('h3', { class: 'section-label', text: 'Account' }),
+      h('h1', { class: 'q-title tight', text: t('settings.title') }),
+      h('h3', { class: 'section-label', text: t('settings.notifications') }), h('div', { class: 'card' }, [toggleRow(t('settings.newMatches'), 'matches'), toggleRow(t('settings.interests'), 'interests'), toggleRow(t('settings.messages'), 'messages')]),
+      h('h3', { class: 'section-label', text: t('settings.language') }), language,
+      h('h3', { class: 'section-label', text: t('settings.privacy') }), h('div', { class: 'card' }, hideRow),
+      h('h3', { class: 'section-label', text: t('settings.account') }),
       h('button', { type: 'button', class: 'btn btn-danger btn-block', onClick: function () {
-        UI.confirm({ title: 'Delete your account?', message: 'Your profile, shortlist and messages will be removed. This cannot be undone.', confirmText: 'Delete account', danger: true }).then(function (yes) {
+        UI.confirm({ title: t('settings.deleteTitle'), message: t('settings.deleteMsg'), confirmText: t('settings.delete'), danger: true }).then(function (yes) {
           if (!yes) return;
-          if (!State.userId) { Bridge.logout(); resetState(); UI.toast('You have been logged out'); Router.replace('phone'); return; }
-          if (!Bridge.deleteAccount()) { UI.toast('Could not delete the account. Please try again.', 'error'); return; }
+          if (!State.userId) { Bridge.logout(); resetState(); UI.toast(t('settings.loggedOut')); Router.replace('phone'); return; }
+          if (!Bridge.deleteAccount()) { UI.toast(t('settings.deleteFail'), 'error'); return; }
           resetState();
-          UI.toast('Your account was deleted');
+          UI.toast(t('settings.deleted'));
           Router.replace('phone');
         });
-      } }, [Icon('trash', 20), 'Delete account'])
+      } }, [Icon('trash', 20), t('settings.delete')])
     ]
   });
-  return { el: screen.el, tab: 'account', title: 'Settings' };
+  return { el: screen.el, tab: 'account', title: t('settings.title') };
 }, { auth: 'browse' });
 
 /* ---------- Help and support ---------- */

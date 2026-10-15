@@ -21,6 +21,28 @@ body { display: flex; align-items: center; justify-content: center; min-height: 
   .phone { width: 100%; height: 100vh; height: 100dvh; border: 0; border-radius: 0; box-shadow: none; }
 }
 
+/* ---------- Language: top-corner pill, first-launch chooser, Hindi-only tweaks ---------- */
+.lang-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 44px; padding: 6px 14px;
+  background: var(--ivory); border: 1.5px solid var(--maroon); border-radius: 999px;
+  color: var(--maroon); font: 600 15px/1.2 var(--font-body); cursor: pointer;
+}
+.lang-pill:active { background: var(--maroon-tint); }
+.lang-pill .icon svg { width: 18px; height: 18px; }
+.lang-body { display: flex; flex-direction: column; justify-content: center; }
+.lang-body .logo-mark { width: 84px; height: 84px; margin-bottom: 16px; }
+.lang-body .logo-mark svg { width: 42px; height: 42px; }
+.lang-body .q-title { margin-bottom: 0; }
+.lang-sub { margin: 2px 0 24px; color: var(--text-soft); font: 600 18px var(--font-head); }
+.lang-body .opt-card > .opt-text > span:first-child { font-size: 20px; font-weight: 600; }
+.lang-note { margin-top: 20px; font-size: 14px; }
+.brand-latin { margin: -2px 0 6px; color: var(--maroon); font: 600 16px var(--font-head); }
+html[lang="hi"] .demo-chip, html[lang="hi"] .demo-tools h2, html[lang="hi"] .comm-summary-label { letter-spacing: 0; text-transform: none; }
+html[lang="hi"] .bottom-nav button { font-size: 13px; line-height: 1.3; }
+html[lang="hi"] .access-banner .ab-text { line-height: 1.5; }
+html[lang="hi"] .q-title { font-size: 26px; }
+
 /* ---------- Stage and screen transitions ---------- */
 .stage { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; }
 

@@ -85,6 +85,7 @@ var ICON_PATHS = {
   gift: '<rect x="4" y="9" width="16" height="11" rx="1"/><path d="M12 9v11M3 9h18M12 9c-3 0-4.5-4-1.5-4.5S12 9 12 9zm0 0c3 0 4.5-4 1.5-4.5S12 9 12 9z"/>',
   hourglass: '<path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9s8 4 8 9"/>',
   refresh: '<path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9M12 3c-2.5 2.6-3.8 5.6-3.8 9s1.3 6.4 3.8 9"/>',
   verified: '<path d="M12 2l2.4 2 3.1-.3 1 3 2.6 1.8-1 3 1 3-2.6 1.8-1 3-3.1-.3L12 22l-2.4-2-3.1.3-1-3L2.9 15.5l1-3-1-3 2.6-1.8 1-3 3.1.3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>'
 };
 
@@ -237,8 +238,8 @@ var UI = (function () {
     return dialog({
       title: options.title, body: options.message, dismissValue: false,
       actions: [
-        { label: options.confirmText || 'Yes', value: true, kind: options.danger ? 'danger' : 'primary', autofocus: true },
-        { label: options.cancelText || 'Cancel', value: false, kind: 'outline' }
+        { label: options.confirmText || t('common.yes'), value: true, kind: options.danger ? 'danger' : 'primary', autofocus: true },
+        { label: options.cancelText || t('common.cancel'), value: false, kind: 'outline' }
       ]
     });
   }
@@ -252,7 +253,7 @@ var UI = (function () {
         h('div', { class: 'sheet-grip', 'aria-hidden': 'true' }),
         h('div', { class: 'sheet-head' }, [
           h('h2', { id: titleId, text: options.title }),
-          h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Close', onClick: function () { close(options.dismissValue); } }, Icon('close'))
+          h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('common.close'), onClick: function () { close(options.dismissValue); } }, Icon('close'))
         ]),
         h('div', { class: 'sheet-body' }, parts.body),
         parts.footer ? h('div', { class: 'sheet-foot' }, parts.footer) : null
@@ -274,13 +275,19 @@ var UI = (function () {
     return digits.slice(0, 2) + new Array(digits.length - 3).join('X') + digits.slice(-2);
   }
 
-  return { toast: toast, dialog: dialog, confirm: confirm, sheet: sheet, skeletons: skeletons, maskPhone: maskPhone };
+  // Closes every open dialog and sheet as if dismissed, so their promises still settle (used before a language repaint).
+  function closeAll() {
+    stack.slice().reverse().forEach(function (entry) { entry.close(entry.dismissValue); });
+  }
+
+  return { toast: toast, dialog: dialog, confirm: confirm, sheet: sheet, closeAll: closeAll, skeletons: skeletons, maskPhone: maskPhone };
 })();
 
 /* ---------- Router: #/name/param routes, one history stack, slide transitions ---------- */
 
 var Router = (function () {
   var routes = {};
+  var redirects = {};   // old addresses that now open another screen (for example a hidden step)
   var currentI = 0;     // position in our own history stack, used to tell forward from back
   var stage = null;
   var nav = null;
@@ -293,6 +300,9 @@ var Router = (function () {
     if (routes[name]) console.error('Router: the route "' + name + '" is registered twice. The second one replaces the first.');
     routes[name] = { build: build, auth: (options && options.auth) || null, only: (options && options.only) || null };
   }
+
+  // redirect('documents', 'review'): a saved link or old history entry for `from` opens `to` instead.
+  function redirect(from, to) { redirects[from] = to; }
 
   function hashFor(name, param) {
     return '#/' + name + (param !== undefined && param !== null && param !== '' ? '/' + encodeURIComponent(param) : '');
@@ -366,6 +376,11 @@ var Router = (function () {
     if (window.Bridge) Bridge.sync(); // the admin may have changed this user's status
     Access.check();
     var parsed = parse();
+    if (redirects[parsed.name]) {
+      parsed = { name: redirects[parsed.name], param: '' };
+      window.history.replaceState({ i: currentI }, '', hashFor(parsed.name));
+      dir = 'fade';
+    }
     var route = routes[parsed.name];
     if (!route) {
       // Unknown address: logged-in people go to the screen that matches their status, others to the splash.
@@ -436,16 +451,28 @@ var Router = (function () {
     var route = routes[parse().name];
     if (!route) return;
     if (State.loggedIn && before === 'pending' && State.status === 'approved') {
-      UI.toast('Your profile was approved!');
+      UI.toast(t('toast.approved'));
       replace('approved');
     } else if (!allowed(route)) {
       replace(route.only && State.loggedIn ? statusScreen(State.status) : gateName());
     }
   }
 
+  // Rebuilds the open screen in place (same route, same param, no history entry), keeping its scroll position.
+  // Form values survive because the inputs are bound to State, not to the old DOM.
+  function refresh() {
+    if (!stage) return;
+    var oldBody = stage.querySelector('.screen.current .screen-body');
+    var scroll = oldBody ? oldBody.scrollTop : 0;
+    render('fade');
+    var newBody = stage.querySelector('.screen.current .screen-body');
+    if (newBody) newBody.scrollTop = scroll;
+  }
+
   function start() {
     stage = document.getElementById('stage');
     nav = document.getElementById('bottom-nav');
+    I18N.translateStatic();
     Array.prototype.forEach.call(nav.querySelectorAll('button'), function (button) {
       button.addEventListener('click', function () { go(button.getAttribute('data-tab'), '', 'fade'); });
     });
@@ -466,5 +493,13 @@ var Router = (function () {
     render('fade');
   }
 
-  return { register: register, start: start, go: go, replace: replace, back: back, backBy: backBy, index: index, gateName: gateName, recheck: recheck };
+  return { register: register, start: start, go: go, replace: replace, back: back, backBy: backBy, index: index, gateName: gateName, recheck: recheck, refresh: refresh, redirect: redirect };
 })();
+
+/* ---------- Live language switch: close popups, relabel fixed markup, repaint the open screen. No reload. ---------- */
+
+I18N.onChange(function () {
+  UI.closeAll();
+  I18N.translateStatic();
+  Router.refresh();
+});
